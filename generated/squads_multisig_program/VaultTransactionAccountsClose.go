@@ -19,6 +19,7 @@ type VaultTransactionAccountsClose struct {
 	// [0] = [] multisig
 	//
 	// [1] = [WRITE] proposal
+	// ··········· the logic within `vault_transaction_accounts_close` does the rest of the checks.
 	//
 	// [2] = [WRITE] transaction
 	// ··········· VaultTransaction corresponding to the `proposal`.
@@ -50,12 +51,14 @@ func (inst *VaultTransactionAccountsClose) GetMultisigAccount() *ag_solanago.Acc
 }
 
 // SetProposalAccount sets the "proposal" account.
+// the logic within `vault_transaction_accounts_close` does the rest of the checks.
 func (inst *VaultTransactionAccountsClose) SetProposalAccount(proposal ag_solanago.PublicKey) *VaultTransactionAccountsClose {
 	inst.AccountMetaSlice[1] = ag_solanago.Meta(proposal).WRITE()
 	return inst
 }
 
 // GetProposalAccount gets the "proposal" account.
+// the logic within `vault_transaction_accounts_close` does the rest of the checks.
 func (inst *VaultTransactionAccountsClose) GetProposalAccount() *ag_solanago.AccountMeta {
 	return inst.AccountMetaSlice.Get(1)
 }

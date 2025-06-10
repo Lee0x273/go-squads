@@ -19,6 +19,7 @@ type ConfigTransactionAccountsClose struct {
 	// [0] = [] multisig
 	//
 	// [1] = [WRITE] proposal
+	// ··········· the logic within `config_transaction_accounts_close` does the rest of the checks.
 	//
 	// [2] = [WRITE] transaction
 	// ··········· ConfigTransaction corresponding to the `proposal`.
@@ -50,12 +51,14 @@ func (inst *ConfigTransactionAccountsClose) GetMultisigAccount() *ag_solanago.Ac
 }
 
 // SetProposalAccount sets the "proposal" account.
+// the logic within `config_transaction_accounts_close` does the rest of the checks.
 func (inst *ConfigTransactionAccountsClose) SetProposalAccount(proposal ag_solanago.PublicKey) *ConfigTransactionAccountsClose {
 	inst.AccountMetaSlice[1] = ag_solanago.Meta(proposal).WRITE()
 	return inst
 }
 
 // GetProposalAccount gets the "proposal" account.
+// the logic within `config_transaction_accounts_close` does the rest of the checks.
 func (inst *ConfigTransactionAccountsClose) GetProposalAccount() *ag_solanago.AccountMeta {
 	return inst.AccountMetaSlice.Get(1)
 }

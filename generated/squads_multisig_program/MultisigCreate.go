@@ -12,83 +12,28 @@ import (
 
 // Create a multisig.
 type MultisigCreate struct {
-	Args *MultisigCreateArgs
 
-	// [0] = [WRITE] multisig
-	//
-	// [1] = [SIGNER] createKey
-	// ··········· An ephemeral signer that is used as a seed for the Multisig PDA.
-	// ··········· Must be a signer to prevent front-running attack by someone else but the original creator.
-	//
-	// [2] = [WRITE, SIGNER] creator
-	// ··········· The creator of the multisig.
-	//
-	// [3] = [] systemProgram
+	// [0] = [] null
 	ag_solanago.AccountMetaSlice `bin:"-"`
 }
 
 // NewMultisigCreateInstructionBuilder creates a new `MultisigCreate` instruction builder.
 func NewMultisigCreateInstructionBuilder() *MultisigCreate {
 	nd := &MultisigCreate{
-		AccountMetaSlice: make(ag_solanago.AccountMetaSlice, 4),
+		AccountMetaSlice: make(ag_solanago.AccountMetaSlice, 1),
 	}
 	return nd
 }
 
-// SetArgs sets the "args" parameter.
-func (inst *MultisigCreate) SetArgs(args MultisigCreateArgs) *MultisigCreate {
-	inst.Args = &args
+// SetNullAccount sets the "null" account.
+func (inst *MultisigCreate) SetNullAccount(null ag_solanago.PublicKey) *MultisigCreate {
+	inst.AccountMetaSlice[0] = ag_solanago.Meta(null)
 	return inst
 }
 
-// SetMultisigAccount sets the "multisig" account.
-func (inst *MultisigCreate) SetMultisigAccount(multisig ag_solanago.PublicKey) *MultisigCreate {
-	inst.AccountMetaSlice[0] = ag_solanago.Meta(multisig).WRITE()
-	return inst
-}
-
-// GetMultisigAccount gets the "multisig" account.
-func (inst *MultisigCreate) GetMultisigAccount() *ag_solanago.AccountMeta {
+// GetNullAccount gets the "null" account.
+func (inst *MultisigCreate) GetNullAccount() *ag_solanago.AccountMeta {
 	return inst.AccountMetaSlice.Get(0)
-}
-
-// SetCreateKeyAccount sets the "createKey" account.
-// An ephemeral signer that is used as a seed for the Multisig PDA.
-// Must be a signer to prevent front-running attack by someone else but the original creator.
-func (inst *MultisigCreate) SetCreateKeyAccount(createKey ag_solanago.PublicKey) *MultisigCreate {
-	inst.AccountMetaSlice[1] = ag_solanago.Meta(createKey).SIGNER()
-	return inst
-}
-
-// GetCreateKeyAccount gets the "createKey" account.
-// An ephemeral signer that is used as a seed for the Multisig PDA.
-// Must be a signer to prevent front-running attack by someone else but the original creator.
-func (inst *MultisigCreate) GetCreateKeyAccount() *ag_solanago.AccountMeta {
-	return inst.AccountMetaSlice.Get(1)
-}
-
-// SetCreatorAccount sets the "creator" account.
-// The creator of the multisig.
-func (inst *MultisigCreate) SetCreatorAccount(creator ag_solanago.PublicKey) *MultisigCreate {
-	inst.AccountMetaSlice[2] = ag_solanago.Meta(creator).WRITE().SIGNER()
-	return inst
-}
-
-// GetCreatorAccount gets the "creator" account.
-// The creator of the multisig.
-func (inst *MultisigCreate) GetCreatorAccount() *ag_solanago.AccountMeta {
-	return inst.AccountMetaSlice.Get(2)
-}
-
-// SetSystemProgramAccount sets the "systemProgram" account.
-func (inst *MultisigCreate) SetSystemProgramAccount(systemProgram ag_solanago.PublicKey) *MultisigCreate {
-	inst.AccountMetaSlice[3] = ag_solanago.Meta(systemProgram)
-	return inst
-}
-
-// GetSystemProgramAccount gets the "systemProgram" account.
-func (inst *MultisigCreate) GetSystemProgramAccount() *ag_solanago.AccountMeta {
-	return inst.AccountMetaSlice.Get(3)
 }
 
 func (inst MultisigCreate) Build() *Instruction {
@@ -109,26 +54,10 @@ func (inst MultisigCreate) ValidateAndBuild() (*Instruction, error) {
 }
 
 func (inst *MultisigCreate) Validate() error {
-	// Check whether all (required) parameters are set:
-	{
-		if inst.Args == nil {
-			return errors.New("Args parameter is not set")
-		}
-	}
-
 	// Check whether all (required) accounts are set:
 	{
 		if inst.AccountMetaSlice[0] == nil {
-			return errors.New("accounts.Multisig is not set")
-		}
-		if inst.AccountMetaSlice[1] == nil {
-			return errors.New("accounts.CreateKey is not set")
-		}
-		if inst.AccountMetaSlice[2] == nil {
-			return errors.New("accounts.Creator is not set")
-		}
-		if inst.AccountMetaSlice[3] == nil {
-			return errors.New("accounts.SystemProgram is not set")
+			return errors.New("accounts.Null is not set")
 		}
 	}
 	return nil
@@ -143,51 +72,27 @@ func (inst *MultisigCreate) EncodeToTree(parent ag_treeout.Branches) {
 				ParentFunc(func(instructionBranch ag_treeout.Branches) {
 
 					// Parameters of the instruction:
-					instructionBranch.Child("Params[len=1]").ParentFunc(func(paramsBranch ag_treeout.Branches) {
-						paramsBranch.Child(ag_format.Param("Args", *inst.Args))
-					})
+					instructionBranch.Child("Params[len=0]").ParentFunc(func(paramsBranch ag_treeout.Branches) {})
 
 					// Accounts of the instruction:
-					instructionBranch.Child("Accounts[len=4]").ParentFunc(func(accountsBranch ag_treeout.Branches) {
-						accountsBranch.Child(ag_format.Meta("     multisig", inst.AccountMetaSlice.Get(0)))
-						accountsBranch.Child(ag_format.Meta("    createKey", inst.AccountMetaSlice.Get(1)))
-						accountsBranch.Child(ag_format.Meta("      creator", inst.AccountMetaSlice.Get(2)))
-						accountsBranch.Child(ag_format.Meta("systemProgram", inst.AccountMetaSlice.Get(3)))
+					instructionBranch.Child("Accounts[len=1]").ParentFunc(func(accountsBranch ag_treeout.Branches) {
+						accountsBranch.Child(ag_format.Meta("null", inst.AccountMetaSlice.Get(0)))
 					})
 				})
 		})
 }
 
 func (obj MultisigCreate) MarshalWithEncoder(encoder *ag_binary.Encoder) (err error) {
-	// Serialize `Args` param:
-	err = encoder.Encode(obj.Args)
-	if err != nil {
-		return err
-	}
 	return nil
 }
 func (obj *MultisigCreate) UnmarshalWithDecoder(decoder *ag_binary.Decoder) (err error) {
-	// Deserialize `Args`:
-	err = decoder.Decode(&obj.Args)
-	if err != nil {
-		return err
-	}
 	return nil
 }
 
 // NewMultisigCreateInstruction declares a new MultisigCreate instruction with the provided parameters and accounts.
 func NewMultisigCreateInstruction(
-	// Parameters:
-	args MultisigCreateArgs,
 	// Accounts:
-	multisig ag_solanago.PublicKey,
-	createKey ag_solanago.PublicKey,
-	creator ag_solanago.PublicKey,
-	systemProgram ag_solanago.PublicKey) *MultisigCreate {
+	null ag_solanago.PublicKey) *MultisigCreate {
 	return NewMultisigCreateInstructionBuilder().
-		SetArgs(args).
-		SetMultisigAccount(multisig).
-		SetCreateKeyAccount(createKey).
-		SetCreatorAccount(creator).
-		SetSystemProgramAccount(systemProgram)
+		SetNullAccount(null)
 }

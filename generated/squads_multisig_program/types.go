@@ -7,7 +7,6 @@ import (
 	ag_solanago "github.com/gagliardetto/solana-go"
 )
 
-
 type BatchAddTransactionArgs struct {
 	// Number of ephemeral signing PDAs required by the transaction.
 	EphemeralSigners   uint8
@@ -170,9 +169,8 @@ type MultisigAddSpendingLimitArgs struct {
 	// When it passes, the remaining amount is reset, unless it's `Period::OneTime`.
 	Period Period
 
-	// Members of the multisig that can use the spending limit.
-	// In case a member is removed from the multisig, the spending limit will remain existent
-	// (until explicitly deleted), but the removed member will not be able to use it anymore.
+	// Members of the Spending Limit that can use it.
+	// Don't have to be members of the multisig.
 	Members []ag_solanago.PublicKey
 
 	// The destination addresses the spending limit is allowed to sent funds to.
@@ -632,124 +630,6 @@ func (obj *MultisigSetRentCollectorArgs) UnmarshalWithDecoder(decoder *ag_binary
 				return err
 			}
 		}
-	}
-	// Deserialize `Memo` (optional):
-	{
-		ok, err := decoder.ReadBool()
-		if err != nil {
-			return err
-		}
-		if ok {
-			err = decoder.Decode(&obj.Memo)
-			if err != nil {
-				return err
-			}
-		}
-	}
-	return nil
-}
-
-type MultisigCreateArgs struct {
-	// The authority that can configure the multisig: add/remove members, change the threshold, etc.
-	// Should be set to `None` for autonomous multisigs.
-	ConfigAuthority *ag_solanago.PublicKey `bin:"optional"`
-
-	// The number of signatures required to execute a transaction.
-	Threshold uint16
-
-	// The members of the multisig.
-	Members []Member
-
-	// How many seconds must pass between transaction voting, settlement, and execution.
-	TimeLock uint32
-
-	// Memo is used for indexing only.
-	Memo *string `bin:"optional"`
-}
-
-func (obj MultisigCreateArgs) MarshalWithEncoder(encoder *ag_binary.Encoder) (err error) {
-	// Serialize `ConfigAuthority` param (optional):
-	{
-		if obj.ConfigAuthority == nil {
-			err = encoder.WriteBool(false)
-			if err != nil {
-				return err
-			}
-		} else {
-			err = encoder.WriteBool(true)
-			if err != nil {
-				return err
-			}
-			err = encoder.Encode(obj.ConfigAuthority)
-			if err != nil {
-				return err
-			}
-		}
-	}
-	// Serialize `Threshold` param:
-	err = encoder.Encode(obj.Threshold)
-	if err != nil {
-		return err
-	}
-	// Serialize `Members` param:
-	err = encoder.Encode(obj.Members)
-	if err != nil {
-		return err
-	}
-	// Serialize `TimeLock` param:
-	err = encoder.Encode(obj.TimeLock)
-	if err != nil {
-		return err
-	}
-	// Serialize `Memo` param (optional):
-	{
-		if obj.Memo == nil {
-			err = encoder.WriteBool(false)
-			if err != nil {
-				return err
-			}
-		} else {
-			err = encoder.WriteBool(true)
-			if err != nil {
-				return err
-			}
-			err = encoder.Encode(obj.Memo)
-			if err != nil {
-				return err
-			}
-		}
-	}
-	return nil
-}
-
-func (obj *MultisigCreateArgs) UnmarshalWithDecoder(decoder *ag_binary.Decoder) (err error) {
-	// Deserialize `ConfigAuthority` (optional):
-	{
-		ok, err := decoder.ReadBool()
-		if err != nil {
-			return err
-		}
-		if ok {
-			err = decoder.Decode(&obj.ConfigAuthority)
-			if err != nil {
-				return err
-			}
-		}
-	}
-	// Deserialize `Threshold`:
-	err = decoder.Decode(&obj.Threshold)
-	if err != nil {
-		return err
-	}
-	// Deserialize `Members`:
-	err = decoder.Decode(&obj.Members)
-	if err != nil {
-		return err
-	}
-	// Deserialize `TimeLock`:
-	err = decoder.Decode(&obj.TimeLock)
-	if err != nil {
-		return err
 	}
 	// Deserialize `Memo` (optional):
 	{
@@ -1228,6 +1108,103 @@ func (obj *SpendingLimitUseArgs) UnmarshalWithDecoder(decoder *ag_binary.Decoder
 	return nil
 }
 
+type TransactionBufferCreateArgs struct {
+	// Index of the buffer account to seed the account derivation
+	BufferIndex uint8
+
+	// Index of the vault this transaction belongs to.
+	VaultIndex uint8
+
+	// Hash of the final assembled transaction message.
+	FinalBufferHash [32]uint8
+
+	// Final size of the buffer.
+	FinalBufferSize uint16
+
+	// Initial slice of the buffer.
+	Buffer []byte
+}
+
+func (obj TransactionBufferCreateArgs) MarshalWithEncoder(encoder *ag_binary.Encoder) (err error) {
+	// Serialize `BufferIndex` param:
+	err = encoder.Encode(obj.BufferIndex)
+	if err != nil {
+		return err
+	}
+	// Serialize `VaultIndex` param:
+	err = encoder.Encode(obj.VaultIndex)
+	if err != nil {
+		return err
+	}
+	// Serialize `FinalBufferHash` param:
+	err = encoder.Encode(obj.FinalBufferHash)
+	if err != nil {
+		return err
+	}
+	// Serialize `FinalBufferSize` param:
+	err = encoder.Encode(obj.FinalBufferSize)
+	if err != nil {
+		return err
+	}
+	// Serialize `Buffer` param:
+	err = encoder.Encode(obj.Buffer)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func (obj *TransactionBufferCreateArgs) UnmarshalWithDecoder(decoder *ag_binary.Decoder) (err error) {
+	// Deserialize `BufferIndex`:
+	err = decoder.Decode(&obj.BufferIndex)
+	if err != nil {
+		return err
+	}
+	// Deserialize `VaultIndex`:
+	err = decoder.Decode(&obj.VaultIndex)
+	if err != nil {
+		return err
+	}
+	// Deserialize `FinalBufferHash`:
+	err = decoder.Decode(&obj.FinalBufferHash)
+	if err != nil {
+		return err
+	}
+	// Deserialize `FinalBufferSize`:
+	err = decoder.Decode(&obj.FinalBufferSize)
+	if err != nil {
+		return err
+	}
+	// Deserialize `Buffer`:
+	err = decoder.Decode(&obj.Buffer)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+type TransactionBufferExtendArgs struct {
+	Buffer []byte
+}
+
+func (obj TransactionBufferExtendArgs) MarshalWithEncoder(encoder *ag_binary.Encoder) (err error) {
+	// Serialize `Buffer` param:
+	err = encoder.Encode(obj.Buffer)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func (obj *TransactionBufferExtendArgs) UnmarshalWithDecoder(decoder *ag_binary.Decoder) (err error) {
+	// Deserialize `Buffer`:
+	err = decoder.Decode(&obj.Buffer)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
 type VaultTransactionCreateArgs struct {
 	// Index of the vault this transaction belongs to.
 	VaultIndex uint8
@@ -1303,192 +1280,6 @@ func (obj *VaultTransactionCreateArgs) UnmarshalWithDecoder(decoder *ag_binary.D
 				return err
 			}
 		}
-	}
-	return nil
-}
-
-type TransactionMessage struct {
-	// The number of signer pubkeys in the account_keys vec.
-	NumSigners uint8
-
-	// The number of writable signer pubkeys in the account_keys vec.
-	NumWritableSigners uint8
-
-	// The number of writable non-signer pubkeys in the account_keys vec.
-	NumWritableNonSigners uint8
-
-	// The list of unique account public keys (including program IDs) that will be used in the provided instructions.
-	AccountKeys []ag_solanago.PublicKey
-
-	// The list of instructions to execute.
-	Instructions []CompiledInstruction
-
-	// List of address table lookups used to load additional accounts
-	// for this transaction.
-	AddressTableLookups []ag_solanago.MessageAddressTableLookup
-}
-
-func (obj TransactionMessage) MarshalWithEncoder(encoder *ag_binary.Encoder) (err error) {
-	// Serialize `NumSigners` param:
-	err = encoder.Encode(obj.NumSigners)
-	if err != nil {
-		return err
-	}
-	// Serialize `NumWritableSigners` param:
-	err = encoder.Encode(obj.NumWritableSigners)
-	if err != nil {
-		return err
-	}
-	// Serialize `NumWritableNonSigners` param:
-	err = encoder.Encode(obj.NumWritableNonSigners)
-	if err != nil {
-		return err
-	}
-	// Serialize `AccountKeys` param:
-	err = encoder.Encode(obj.AccountKeys)
-	if err != nil {
-		return err
-	}
-	// Serialize `Instructions` param:
-	err = encoder.Encode(obj.Instructions)
-	if err != nil {
-		return err
-	}
-	// Serialize `AddressTableLookups` param:
-	err = encoder.Encode(obj.AddressTableLookups)
-	if err != nil {
-		return err
-	}
-	return nil
-}
-
-func (obj *TransactionMessage) UnmarshalWithDecoder(decoder *ag_binary.Decoder) (err error) {
-	// Deserialize `NumSigners`:
-	err = decoder.Decode(&obj.NumSigners)
-	if err != nil {
-		return err
-	}
-	// Deserialize `NumWritableSigners`:
-	err = decoder.Decode(&obj.NumWritableSigners)
-	if err != nil {
-		return err
-	}
-	// Deserialize `NumWritableNonSigners`:
-	err = decoder.Decode(&obj.NumWritableNonSigners)
-	if err != nil {
-		return err
-	}
-	// Deserialize `AccountKeys`:
-	err = decoder.Decode(&obj.AccountKeys)
-	if err != nil {
-		return err
-	}
-	// Deserialize `Instructions`:
-	err = decoder.Decode(&obj.Instructions)
-	if err != nil {
-		return err
-	}
-	// Deserialize `AddressTableLookups`:
-	err = decoder.Decode(&obj.AddressTableLookups)
-	if err != nil {
-		return err
-	}
-	return nil
-}
-
-type CompiledInstruction struct {
-	ProgramIdIndex uint8
-
-	// Indices into the tx's `account_keys` list indicating which accounts to pass to the instruction.
-	AccountIndexes []uint16
-
-	// Instruction data.
-	Data []byte
-}
-
-func (obj CompiledInstruction) MarshalWithEncoder(encoder *ag_binary.Encoder) (err error) {
-	// Serialize `ProgramIdIndex` param:
-	err = encoder.Encode(obj.ProgramIdIndex)
-	if err != nil {
-		return err
-	}
-	// Serialize `AccountIndexes` param:
-	err = encoder.Encode(obj.AccountIndexes)
-	if err != nil {
-		return err
-	}
-	// Serialize `Data` param:
-	err = encoder.Encode(obj.Data)
-	if err != nil {
-		return err
-	}
-	return nil
-}
-
-func (obj *CompiledInstruction) UnmarshalWithDecoder(decoder *ag_binary.Decoder) (err error) {
-	// Deserialize `ProgramIdIndex`:
-	err = decoder.Decode(&obj.ProgramIdIndex)
-	if err != nil {
-		return err
-	}
-	// Deserialize `AccountIndexes`:
-	err = decoder.Decode(&obj.AccountIndexes)
-	if err != nil {
-		return err
-	}
-	// Deserialize `Data`:
-	err = decoder.Decode(&obj.Data)
-	if err != nil {
-		return err
-	}
-	return nil
-}
-
-type MessageAddressTableLookup struct {
-	// Address lookup table account key
-	AccountKey ag_solanago.PublicKey
-
-	// List of indexes used to load writable account addresses
-	WritableIndexes []uint8
-
-	// List of indexes used to load readonly account addresses
-	ReadonlyIndexes []uint8
-}
-
-func (obj MessageAddressTableLookup) MarshalWithEncoder(encoder *ag_binary.Encoder) (err error) {
-	// Serialize `AccountKey` param:
-	err = encoder.Encode(obj.AccountKey)
-	if err != nil {
-		return err
-	}
-	// Serialize `WritableIndexes` param:
-	err = encoder.Encode(obj.WritableIndexes)
-	if err != nil {
-		return err
-	}
-	// Serialize `ReadonlyIndexes` param:
-	err = encoder.Encode(obj.ReadonlyIndexes)
-	if err != nil {
-		return err
-	}
-	return nil
-}
-
-func (obj *MessageAddressTableLookup) UnmarshalWithDecoder(decoder *ag_binary.Decoder) (err error) {
-	// Deserialize `AccountKey`:
-	err = decoder.Decode(&obj.AccountKey)
-	if err != nil {
-		return err
-	}
-	// Deserialize `WritableIndexes`:
-	err = decoder.Decode(&obj.WritableIndexes)
-	if err != nil {
-		return err
-	}
-	// Deserialize `ReadonlyIndexes`:
-	err = decoder.Decode(&obj.ReadonlyIndexes)
-	if err != nil {
-		return err
 	}
 	return nil
 }
@@ -2033,27 +1824,6 @@ func (obj *ConfigActionSetRentCollector) UnmarshalWithDecoder(decoder *ag_binary
 }
 
 func (_ *ConfigActionSetRentCollector) isConfigAction() {}
-
-type Permission ag_binary.BorshEnum
-
-const (
-	PermissionInitiate Permission = iota
-	PermissionVote
-	PermissionExecute
-)
-
-func (value Permission) String() string {
-	switch value {
-	case PermissionInitiate:
-		return "Initiate"
-	case PermissionVote:
-		return "Vote"
-	case PermissionExecute:
-		return "Execute"
-	default:
-		return ""
-	}
-}
 
 type ProposalStatus interface {
 	isProposalStatus()

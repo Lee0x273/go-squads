@@ -924,6 +924,127 @@ func (obj *SpendingLimit) UnmarshalWithDecoder(decoder *ag_binary.Decoder) (err 
 	return nil
 }
 
+type TransactionBuffer struct {
+	// The multisig this belongs to.
+	Multisig ag_solanago.PublicKey
+
+	// Member of the Multisig who created the TransactionBuffer.
+	Creator ag_solanago.PublicKey
+
+	// Index to seed address derivation
+	BufferIndex uint8
+
+	// Vault index of the transaction this buffer belongs to.
+	VaultIndex uint8
+
+	// Hash of the final assembled transaction message.
+	FinalBufferHash [32]uint8
+
+	// The size of the final assembled transaction message.
+	FinalBufferSize uint16
+
+	// The buffer of the transaction message.
+	Buffer []byte
+}
+
+var TransactionBufferDiscriminator = [8]byte{90, 36, 35, 219, 93, 225, 110, 96}
+
+func (obj TransactionBuffer) MarshalWithEncoder(encoder *ag_binary.Encoder) (err error) {
+	// Write account discriminator:
+	err = encoder.WriteBytes(TransactionBufferDiscriminator[:], false)
+	if err != nil {
+		return err
+	}
+	// Serialize `Multisig` param:
+	err = encoder.Encode(obj.Multisig)
+	if err != nil {
+		return err
+	}
+	// Serialize `Creator` param:
+	err = encoder.Encode(obj.Creator)
+	if err != nil {
+		return err
+	}
+	// Serialize `BufferIndex` param:
+	err = encoder.Encode(obj.BufferIndex)
+	if err != nil {
+		return err
+	}
+	// Serialize `VaultIndex` param:
+	err = encoder.Encode(obj.VaultIndex)
+	if err != nil {
+		return err
+	}
+	// Serialize `FinalBufferHash` param:
+	err = encoder.Encode(obj.FinalBufferHash)
+	if err != nil {
+		return err
+	}
+	// Serialize `FinalBufferSize` param:
+	err = encoder.Encode(obj.FinalBufferSize)
+	if err != nil {
+		return err
+	}
+	// Serialize `Buffer` param:
+	err = encoder.Encode(obj.Buffer)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func (obj *TransactionBuffer) UnmarshalWithDecoder(decoder *ag_binary.Decoder) (err error) {
+	// Read and check account discriminator:
+	{
+		discriminator, err := decoder.ReadTypeID()
+		if err != nil {
+			return err
+		}
+		if !discriminator.Equal(TransactionBufferDiscriminator[:]) {
+			return fmt.Errorf(
+				"wrong discriminator: wanted %s, got %s",
+				"[90 36 35 219 93 225 110 96]",
+				fmt.Sprint(discriminator[:]))
+		}
+	}
+	// Deserialize `Multisig`:
+	err = decoder.Decode(&obj.Multisig)
+	if err != nil {
+		return err
+	}
+	// Deserialize `Creator`:
+	err = decoder.Decode(&obj.Creator)
+	if err != nil {
+		return err
+	}
+	// Deserialize `BufferIndex`:
+	err = decoder.Decode(&obj.BufferIndex)
+	if err != nil {
+		return err
+	}
+	// Deserialize `VaultIndex`:
+	err = decoder.Decode(&obj.VaultIndex)
+	if err != nil {
+		return err
+	}
+	// Deserialize `FinalBufferHash`:
+	err = decoder.Decode(&obj.FinalBufferHash)
+	if err != nil {
+		return err
+	}
+	// Deserialize `FinalBufferSize`:
+	err = decoder.Decode(&obj.FinalBufferSize)
+	if err != nil {
+		return err
+	}
+	// Deserialize `Buffer`:
+	err = decoder.Decode(&obj.Buffer)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
 type VaultTransaction struct {
 	// The multisig this belongs to.
 	Multisig ag_solanago.PublicKey

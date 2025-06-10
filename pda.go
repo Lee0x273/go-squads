@@ -1,6 +1,8 @@
 package squads
 
 import (
+	"squads/generated/squads_multisig_program"
+
 	"github.com/gagliardetto/solana-go"
 )
 
@@ -22,7 +24,7 @@ func (s *SQuard) GetProgramConfigPda() (solana.PublicKey, error) {
 			SEED_PREFIX,
 			SEED_PROGRAM_CONFIG,
 		},
-		PROGRAM_ID,
+		squads_multisig_program.ProgramID,
 	)
 	if err != nil {
 		return solana.PublicKey{}, err
@@ -37,7 +39,7 @@ func (s *SQuard) GetMultisigPda(createKey solana.PublicKey) (solana.PublicKey, e
 			SEED_MULTISIG,
 			createKey.Bytes(),
 		},
-		PROGRAM_ID,
+		squads_multisig_program.ProgramID,
 	)
 	if err != nil {
 		return solana.PublicKey{}, err
@@ -45,15 +47,15 @@ func (s *SQuard) GetMultisigPda(createKey solana.PublicKey) (solana.PublicKey, e
 	return pk, nil
 }
 
-func (s *SQuard) GetVaultPda(multisigPda solana.PublicKey, index uint8) (solana.PublicKey, error) {
+func (s *SQuard) GetVaultPda(index uint8) (solana.PublicKey, error) {
 	pk, _, err := solana.FindProgramAddress(
 		[][]byte{
 			SEED_PREFIX,
-			multisigPda.Bytes(),
+			s.multisigPda.Bytes(),
 			SEED_VAULT,
 			[]byte{index},
 		},
-		PROGRAM_ID,
+		squads_multisig_program.ProgramID,
 	)
 	if err != nil {
 		return solana.PublicKey{}, err
@@ -69,7 +71,7 @@ func (s *SQuard) GetEphemeralSignerPda(transactionPda solana.PublicKey, ephemera
 			SEED_EPHEMERAL_SIGNER,
 			[]byte{ephemeralSignerIndex},
 		},
-		PROGRAM_ID,
+		squads_multisig_program.ProgramID,
 	)
 	if err != nil {
 		return solana.PublicKey{}, err
@@ -77,15 +79,15 @@ func (s *SQuard) GetEphemeralSignerPda(transactionPda solana.PublicKey, ephemera
 	return pk, nil
 }
 
-func (s *SQuard) GetTransactionPda(multisigPda solana.PublicKey, index uint64) (solana.PublicKey, error) {
+func (s *SQuard) GetTransactionPda(index uint64) (solana.PublicKey, error) {
 	pk, _, err := solana.FindProgramAddress(
 		[][]byte{
 			SEED_PREFIX,
-			multisigPda.Bytes(),
+			s.multisigPda.Bytes(),
 			SEED_TRANSACTION,
 			toU64Bytes(index),
 		},
-		PROGRAM_ID,
+		squads_multisig_program.ProgramID,
 	)
 	if err != nil {
 		return solana.PublicKey{}, err
@@ -93,16 +95,16 @@ func (s *SQuard) GetTransactionPda(multisigPda solana.PublicKey, index uint64) (
 	return pk, nil
 }
 
-func (s *SQuard) GetProposalPda(multisigPda solana.PublicKey, transactionIndex uint64) (solana.PublicKey, error) {
+func (s *SQuard) GetProposalPda(transactionIndex uint64) (solana.PublicKey, error) {
 	pk, _, err := solana.FindProgramAddress(
 		[][]byte{
 			SEED_PREFIX,
-			multisigPda.Bytes(),
+			s.multisigPda.Bytes(),
 			SEED_TRANSACTION,
 			toU64Bytes(transactionIndex),
 			SEED_PROPOSAL,
 		},
-		PROGRAM_ID,
+		squads_multisig_program.ProgramID,
 	)
 	if err != nil {
 		return solana.PublicKey{}, err
@@ -110,17 +112,17 @@ func (s *SQuard) GetProposalPda(multisigPda solana.PublicKey, transactionIndex u
 	return pk, nil
 }
 
-func (s *SQuard) GetBatchTransactionPda(multisigPda solana.PublicKey, batchIndex uint64, transactionIndex uint32) (solana.PublicKey, error) {
+func (s *SQuard) GetBatchTransactionPda(batchIndex uint64, transactionIndex uint32) (solana.PublicKey, error) {
 	pk, _, err := solana.FindProgramAddress(
 		[][]byte{
 			SEED_PREFIX,
-			multisigPda.Bytes(),
+			s.multisigPda.Bytes(),
 			SEED_TRANSACTION,
 			toU64Bytes(batchIndex),
 			SEED_BATCH_TRANSACTION,
 			toU32Bytes(transactionIndex),
 		},
-		PROGRAM_ID,
+		squads_multisig_program.ProgramID,
 	)
 	if err != nil {
 		return solana.PublicKey{}, err
@@ -128,15 +130,15 @@ func (s *SQuard) GetBatchTransactionPda(multisigPda solana.PublicKey, batchIndex
 	return pk, nil
 }
 
-func (s *SQuard) GetSpendingLimitPda(multisigPda solana.PublicKey, createKey solana.PublicKey) (solana.PublicKey, error) {
+func (s *SQuard) GetSpendingLimitPda(createKey solana.PublicKey) (solana.PublicKey, error) {
 	pk, _, err := solana.FindProgramAddress(
 		[][]byte{
 			SEED_PREFIX,
-			multisigPda.Bytes(),
+			s.multisigPda.Bytes(),
 			SEED_SPENDING_LIMIT,
 			createKey.Bytes(),
 		},
-		PROGRAM_ID,
+		squads_multisig_program.ProgramID,
 	)
 	if err != nil {
 		return solana.PublicKey{}, err

@@ -20,6 +20,7 @@ type BatchAccountsClose struct {
 	// [0] = [] multisig
 	//
 	// [1] = [WRITE] proposal
+	// ··········· the logic within `batch_accounts_close` does the rest of the checks.
 	//
 	// [2] = [WRITE] batch
 	// ··········· `Batch` corresponding to the `proposal`.
@@ -51,12 +52,14 @@ func (inst *BatchAccountsClose) GetMultisigAccount() *ag_solanago.AccountMeta {
 }
 
 // SetProposalAccount sets the "proposal" account.
+// the logic within `batch_accounts_close` does the rest of the checks.
 func (inst *BatchAccountsClose) SetProposalAccount(proposal ag_solanago.PublicKey) *BatchAccountsClose {
 	inst.AccountMetaSlice[1] = ag_solanago.Meta(proposal).WRITE()
 	return inst
 }
 
 // GetProposalAccount gets the "proposal" account.
+// the logic within `batch_accounts_close` does the rest of the checks.
 func (inst *BatchAccountsClose) GetProposalAccount() *ag_solanago.AccountMeta {
 	return inst.AccountMetaSlice.Get(1)
 }

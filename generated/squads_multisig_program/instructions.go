@@ -12,7 +12,7 @@ import (
 	ag_treeout "github.com/gagliardetto/treeout"
 )
 
-var ProgramID ag_solanago.PublicKey
+var ProgramID ag_solanago.PublicKey = ag_solanago.MustPublicKeyFromBase58("SQDS4ep65T869zMMBKyuUq6aD6EgTu8psMjkvj52pCf")
 
 func SetProgramID(pubkey ag_solanago.PublicKey) {
 	ProgramID = pubkey
@@ -80,6 +80,19 @@ var (
 	// Create a new vault transaction.
 	Instruction_VaultTransactionCreate = ag_binary.TypeID([8]byte{48, 250, 78, 168, 208, 226, 218, 211})
 
+	// Create a transaction buffer account.
+	Instruction_TransactionBufferCreate = ag_binary.TypeID([8]byte{245, 201, 113, 108, 37, 63, 29, 89})
+
+	// Close a transaction buffer account.
+	Instruction_TransactionBufferClose = ag_binary.TypeID([8]byte{17, 182, 208, 228, 136, 24, 178, 102})
+
+	// Extend a transaction buffer account.
+	Instruction_TransactionBufferExtend = ag_binary.TypeID([8]byte{230, 157, 67, 56, 5, 238, 245, 146})
+
+	// Create a new vault transaction from a completed transaction buffer.
+	// Finalized buffer hash must match `final_buffer_hash`
+	Instruction_VaultTransactionCreateFromBuffer = ag_binary.TypeID([8]byte{222, 54, 149, 68, 87, 246, 48, 231})
+
 	// Execute a vault transaction.
 	// The transaction must be `Approved`.
 	Instruction_VaultTransactionExecute = ag_binary.TypeID([8]byte{194, 8, 161, 87, 153, 164, 25, 171})
@@ -110,6 +123,15 @@ var (
 	// Cancel a multisig proposal on behalf of the `member`.
 	// The proposal must be `Approved`.
 	Instruction_ProposalCancel = ag_binary.TypeID([8]byte{27, 42, 127, 237, 38, 163, 84, 203})
+
+	// Cancel a multisig proposal on behalf of the `member`.
+	// The proposal must be `Approved`.
+	// This was introduced to incorporate proper state update, as old multisig members
+	// may have lingering votes, and the proposal size may need to be reallocated to
+	// accommodate the new amount of cancel votes.
+	// The previous implemenation still works if the proposal size is in line with the
+	// threshold size.
+	Instruction_ProposalCancelV2 = ag_binary.TypeID([8]byte{205, 41, 194, 61, 220, 139, 16, 247})
 
 	// Use a spending limit to transfer tokens from a multisig vault to a destination account.
 	Instruction_SpendingLimitUse = ag_binary.TypeID([8]byte{16, 57, 130, 127, 193, 20, 155, 134})
@@ -178,6 +200,14 @@ func InstructionIDToName(id ag_binary.TypeID) string {
 		return "ConfigTransactionExecute"
 	case Instruction_VaultTransactionCreate:
 		return "VaultTransactionCreate"
+	case Instruction_TransactionBufferCreate:
+		return "TransactionBufferCreate"
+	case Instruction_TransactionBufferClose:
+		return "TransactionBufferClose"
+	case Instruction_TransactionBufferExtend:
+		return "TransactionBufferExtend"
+	case Instruction_VaultTransactionCreateFromBuffer:
+		return "VaultTransactionCreateFromBuffer"
 	case Instruction_VaultTransactionExecute:
 		return "VaultTransactionExecute"
 	case Instruction_BatchCreate:
@@ -196,6 +226,8 @@ func InstructionIDToName(id ag_binary.TypeID) string {
 		return "ProposalReject"
 	case Instruction_ProposalCancel:
 		return "ProposalCancel"
+	case Instruction_ProposalCancelV2:
+		return "ProposalCancelV2"
 	case Instruction_SpendingLimitUse:
 		return "SpendingLimitUse"
 	case Instruction_ConfigTransactionAccountsClose:
@@ -278,6 +310,18 @@ var InstructionImplDef = ag_binary.NewVariantDefinition(
 			"vault_transaction_create", (*VaultTransactionCreate)(nil),
 		},
 		{
+			"transaction_buffer_create", (*TransactionBufferCreate)(nil),
+		},
+		{
+			"transaction_buffer_close", (*TransactionBufferClose)(nil),
+		},
+		{
+			"transaction_buffer_extend", (*TransactionBufferExtend)(nil),
+		},
+		{
+			"vault_transaction_create_from_buffer", (*VaultTransactionCreateFromBuffer)(nil),
+		},
+		{
 			"vault_transaction_execute", (*VaultTransactionExecute)(nil),
 		},
 		{
@@ -303,6 +347,9 @@ var InstructionImplDef = ag_binary.NewVariantDefinition(
 		},
 		{
 			"proposal_cancel", (*ProposalCancel)(nil),
+		},
+		{
+			"proposal_cancel_v2", (*ProposalCancelV2)(nil),
 		},
 		{
 			"spending_limit_use", (*SpendingLimitUse)(nil),
