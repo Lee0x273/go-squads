@@ -9,7 +9,6 @@ require (
 	github.com/gagliardetto/gofuzz v1.2.2
 	github.com/gagliardetto/solana-go v1.12.0
 	github.com/gagliardetto/treeout v0.1.4
-	github.com/gorilla/websocket v1.5.3
 	github.com/stretchr/testify v1.7.0
 )
 

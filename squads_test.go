@@ -3,6 +3,7 @@ package squads
 import (
 	"context"
 	"fmt"
+	"squads/generated/squads_multisig_program"
 	"testing"
 
 	"github.com/axengine/utils"
@@ -21,25 +22,6 @@ func Test_Multisig(t *testing.T) {
 		t.Fatal(err)
 	}
 	fmt.Println(utils.JsonPretty(multisig))
-
-	// 在输出信息时添加 discriminator
-	// fmt.Printf("Discriminator: %x\n", multisig.Discriminator)
-	fmt.Printf("多签钱包地址: %s\n", multisigPda.String())
-	fmt.Printf("创建密钥: %s\n", multisig.CreateKey.String())
-	fmt.Printf("配置权限: %s\n", multisig.ConfigAuthority.String())
-	fmt.Printf("签名阈值: %d\n", multisig.Threshold)
-	fmt.Printf("时间锁: %d秒\n", multisig.TimeLock)
-	fmt.Printf("交易索引: %d\n", multisig.TransactionIndex)
-	fmt.Printf("过期交易索引: %d\n", multisig.StaleTransactionIndex)
-	if multisig.RentCollector != nil {
-		fmt.Printf("租金收集者: %s\n", multisig.RentCollector.String())
-	}
-	fmt.Printf("Bump: %d\n", multisig.Bump)
-	// fmt.Printf("成员数量: %d\n", multisig.MemberCount)
-	fmt.Println("成员列表:")
-	for i, member := range multisig.Members {
-		fmt.Printf("  %d. %s %d\n", i+1, member.Key.String(), member.Permissions.Mask)
-	}
 }
 
 func Test_VaultTransactionCreate(t *testing.T) {
@@ -64,9 +46,184 @@ func Test_VaultTransactionCreate(t *testing.T) {
 		signer.PublicKey(),
 	).Build()
 
+	transactionIndex := multisig.TransactionIndex + 1
+	fmt.Println("transactionIndex=", transactionIndex)
+
 	tx, err := s.CreateVaultTransactionCreate(t.Context(), signer.PublicKey(), 0,
-		multisig.TransactionIndex+1,
+		transactionIndex,
 		[]solana.Instruction{vaultInstruction})
+	if err != nil {
+		t.Fatal(err)
+	}
+	_, err = tx.Sign(func(key solana.PublicKey) *solana.PrivateKey {
+		if signer.PublicKey().Equals(key) {
+			return &signer
+		}
+		return nil
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	sig, err := client.SendTransaction(context.TODO(), tx)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	fmt.Printf("transaction broadcasted,signature: %s\n", sig.String())
+}
+
+func Test_GetVaultTransaction(t *testing.T) {
+	client := rpc.New("http://47.241.179.122:8001/")
+
+	multisigPda := solana.MustPublicKeyFromBase58("G26QSXWEdY11iue8Dw2aushtw7hhVF5zHDhSXqSJGRLA")
+	s := NewSQuard(multisigPda, client)
+	for i := 1; i < 20; i++ {
+		pda, _ := s.GetTransactionPda(uint64(i))
+		act, err := s.TransactionAccount(t.Context(), pda)
+		if err != nil {
+			t.Fatal(err)
+		}
+		utils.JsonPrettyToStdout(act)
+	}
+}
+
+func Test_CreateProposal(t *testing.T) {
+	client := rpc.New("http://47.241.179.122:8001/")
+
+	signer, _ := solana.PrivateKeyFromBase58("5RKVVjG1RDYD2biSDfNSfakGWEozVjUdgtDQAi74CghZyrCVf4gQot6X2ZBSmmJzMhGhkN9t8hGFdsy2337CbA1E")
+	fmt.Println("signer:", signer.PublicKey())
+
+	multisigPda := solana.MustPublicKeyFromBase58("G26QSXWEdY11iue8Dw2aushtw7hhVF5zHDhSXqSJGRLA")
+	s := NewSQuard(multisigPda, client)
+	multisig, err := s.Multisig(t.Context())
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	tx, err := s.CreateProposalCreate(t.Context(), signer.PublicKey(), multisig.TransactionIndex)
+	if err != nil {
+		t.Fatal(err)
+	}
+	_, err = tx.Sign(func(key solana.PublicKey) *solana.PrivateKey {
+		if signer.PublicKey().Equals(key) {
+			return &signer
+		}
+		return nil
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	sig, err := client.SendTransaction(context.TODO(), tx)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	fmt.Printf("transaction broadcasted,signature: %s\n", sig.String())
+}
+
+func Test_ProposalVote(t *testing.T) {
+	client := rpc.New("http://47.241.179.122:8001/")
+
+	signer, _ := solana.PrivateKeyFromBase58("5RKVVjG1RDYD2biSDfNSfakGWEozVjUdgtDQAi74CghZyrCVf4gQot6X2ZBSmmJzMhGhkN9t8hGFdsy2337CbA1E")
+	fmt.Println("signer:", signer.PublicKey())
+
+	multisigPda := solana.MustPublicKeyFromBase58("G26QSXWEdY11iue8Dw2aushtw7hhVF5zHDhSXqSJGRLA")
+	s := NewSQuard(multisigPda, client)
+	multisig, err := s.Multisig(t.Context())
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	proposalPda, err := s.GetProposalPda(multisig.TransactionIndex)
+	if err != nil {
+		t.Fatal(err)
+	}
+	proposal, err := s.ProposalAccount(t.Context(), proposalPda)
+	if err != nil {
+		t.Fatal(err)
+	}
+	fmt.Println(utils.JsonPretty(proposal))
+
+	switch proposal.Status.(type) {
+	case *squads_multisig_program.ProposalStatusActive:
+		fmt.Println("proposal is active")
+	case *squads_multisig_program.ProposalStatusDraft:
+		fmt.Println("proposal is draft")
+	case *squads_multisig_program.ProposalStatusExecuted:
+		fmt.Println("proposal is executed")
+	case *squads_multisig_program.ProposalStatusRejected:
+		fmt.Println("proposal is rejected")
+	default:
+		t.Fatal("unknown proposal status")
+	}
+
+	tx, err := s.CreateProposalVote(t.Context(), signer.PublicKey(), multisig.TransactionIndex)
+	if err != nil {
+		t.Fatal(err)
+	}
+	_, err = tx.Sign(func(key solana.PublicKey) *solana.PrivateKey {
+		if signer.PublicKey().Equals(key) {
+			return &signer
+		}
+		return nil
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	sig, err := client.SendTransaction(context.TODO(), tx)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	fmt.Printf("transaction broadcasted,signature: %s\n", sig.String())
+}
+
+func Test_VaultTransactionExecute(t *testing.T) {
+	client := rpc.New("http://47.241.179.122:8001/")
+
+	signer, _ := solana.PrivateKeyFromBase58("5vhBxBxp3JXxnMYmkM9q1NwTckCRSiQTHk7aKBes22FRoCQ5QVmTqyTsaLqLy4eDHQJnyb5QPoqzcvKfCiqbYSqH")
+	fmt.Println("signer:", signer.PublicKey())
+
+	multisigPda := solana.MustPublicKeyFromBase58("G26QSXWEdY11iue8Dw2aushtw7hhVF5zHDhSXqSJGRLA")
+	s := NewSQuard(multisigPda, client)
+	multisig, err := s.Multisig(t.Context())
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	fmt.Println("multisig.TransactionIndex=", multisig.TransactionIndex)
+	// proposalPda, err := s.GetProposalPda(multisig.TransactionIndex)
+	// if err != nil {
+	// 	t.Fatal(err)
+	// }
+	// proposal, err := s.ProposalAccount(t.Context(), proposalPda)
+	// if err != nil {
+	// 	t.Fatal(err)
+	// }
+	// fmt.Println(utils.JsonPretty(proposal))
+	// switch proposal.Status.(type) {
+	// case *squads_multisig_program.ProposalStatusActive:
+	// 	fmt.Println("proposal is active")
+	// case *squads_multisig_program.ProposalStatusDraft:
+	// 	fmt.Println("proposal is draft")
+	// case *squads_multisig_program.ProposalStatusExecuted:
+	// 	fmt.Println("proposal is executed")
+	// case *squads_multisig_program.ProposalStatusRejected:
+	// 	fmt.Println("proposal is rejected")
+	// case *squads_multisig_program.ProposalStatusApproved:
+	// 	fmt.Println("proposal is approved")
+	// case *squads_multisig_program.ProposalStatusExecuting:
+	// 	fmt.Println("proposal is executing")
+	// case *squads_multisig_program.ProposalStatusCancelled:
+	// 	fmt.Println("proposal is cancelled")
+	// default:
+	// 	t.Fatal("unknown proposal status")
+	// }
+
+	tx, err := s.CreateVaultTransactionExecute(t.Context(), signer.PublicKey(), multisig.TransactionIndex)
 	if err != nil {
 		t.Fatal(err)
 	}

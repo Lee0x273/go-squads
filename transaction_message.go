@@ -5,6 +5,7 @@ import (
 	"log"
 	"squads/generated/squads_multisig_program"
 
+	"github.com/axengine/utils"
 	ag_binary "github.com/gagliardetto/binary"
 	"github.com/gagliardetto/solana-go"
 	addresslookuptable "github.com/gagliardetto/solana-go/programs/address-lookup-table"
@@ -26,7 +27,7 @@ func TransactionMessageToMultisigTransactionMessageBytes(message TransactionMess
 		message.Instructions,
 		addressLookupTableAccounts)
 
-	txMsg := squads_multisig_program.VaultTransactionMessage{
+	txMsg := squads_multisig_program.TransactionMessage{
 		NumSigners:            uint8(compiledMessage.Header.NumRequiredSignatures),
 		NumWritableSigners:    uint8(compiledMessage.Header.NumRequiredSignatures - compiledMessage.Header.NumReadonlySignedAccounts),
 		NumWritableNonSigners: uint8(len(compiledMessage.StaticAccountKeys)) - compiledMessage.Header.NumRequiredSignatures - compiledMessage.Header.NumReadonlyUnsignedAccounts,
@@ -35,16 +36,18 @@ func TransactionMessageToMultisigTransactionMessageBytes(message TransactionMess
 		// AddressTableLookups:   compiledMessage.AddressTableLookups,
 	}
 	for _, v := range compiledMessage.CompiledInstructions {
-		txMsg.Instructions = append(txMsg.Instructions, squads_multisig_program.MultisigCompiledInstruction{
+		txMsg.Instructions = append(txMsg.Instructions, squads_multisig_program.CompiledInstruction{
 			ProgramIdIndex: uint8(v.ProgramIDIndex),
 			AccountIndexes: convertToUint8Slice(v.Accounts),
 			Data:           v.Data,
 		})
 	}
 
+	utils.JsonPrettyToStdout(txMsg)
+
 	// Serialize the message to bytes using borsh encoder
 	buf := new(bytes.Buffer)
-	err := ag_binary.NewBorshEncoder(buf).Encode(txMsg)
+	err := ag_binary.NewBorshEncoder(buf).Encode(&txMsg)
 	if err != nil {
 		log.Fatalf("Failed to encode transaction message: %v", err)
 	}
