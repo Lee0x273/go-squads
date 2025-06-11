@@ -42,6 +42,13 @@ func TransactionMessageToMultisigTransactionMessageBytes(message TransactionMess
 			Data:           v.Data,
 		})
 	}
+	for _, v := range compiledMessage.AddressTableLookups {
+		txMsg.AddressTableLookups = append(txMsg.AddressTableLookups, squads_multisig_program.MessageAddressTableLookup{
+			AccountKey:      v.AccountKey,
+			WritableIndexes: v.WritableIndexes,
+			ReadonlyIndexes: v.ReadonlyIndexes,
+		})
+	}
 
 	utils.JsonPrettyToStdout(txMsg)
 
