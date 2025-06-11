@@ -78,14 +78,14 @@ func Test_GetVaultTransaction(t *testing.T) {
 
 	multisigPda := solana.MustPublicKeyFromBase58("G26QSXWEdY11iue8Dw2aushtw7hhVF5zHDhSXqSJGRLA")
 	s := NewSQuard(multisigPda, client)
-	for i := 1; i < 20; i++ {
-		pda, _ := s.GetTransactionPda(uint64(i))
-		act, err := s.TransactionAccount(t.Context(), pda)
-		if err != nil {
-			t.Fatal(err)
-		}
-		utils.JsonPrettyToStdout(act)
+	transactionIndex := uint64(1)
+	pda, _ := s.GetTransactionPda(uint64(transactionIndex))
+	act, err := s.VaultTransactionAccount(t.Context(), pda)
+	if err != nil {
+		t.Fatal(err)
 	}
+	utils.JsonPrettyToStdout(act)
+
 }
 
 func Test_CreateProposal(t *testing.T) {

@@ -55,21 +55,6 @@ func (s *SQuard) ProposalAccount(ctx context.Context, proposalPda solana.PublicK
 	return account, nil
 }
 
-func (s *SQuard) TransactionAccount(ctx context.Context, transactionPda solana.PublicKey) (*squads_multisig_program.VaultTransaction, error) {
-	out, err := s.client.GetAccountInfo(ctx, transactionPda)
-	if err != nil {
-		return nil, err
-	}
-	data := out.Value.Data.GetBinary()
-
-	account := &squads_multisig_program.VaultTransaction{}
-	decoder := ag_binary.NewBorshDecoder(data)
-	if err := account.UnmarshalWithDecoder(decoder); err != nil {
-		return nil, err
-	}
-	return account, nil
-}
-
 func (s *SQuard) VaultTransactionAccount(ctx context.Context, transactionPda solana.PublicKey) (*squads_multisig_program.VaultTransaction, error) {
 	out, err := s.client.GetAccountInfo(ctx, transactionPda)
 	if err != nil {
