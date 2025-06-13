@@ -3,7 +3,6 @@ package squads
 import (
 	"context"
 	"fmt"
-	"squads/generated/squads_multisig_program"
 	"testing"
 
 	"github.com/axengine/utils"
@@ -16,7 +15,7 @@ func Test_Multisig(t *testing.T) {
 	client := rpc.New("http://47.241.179.122:8001/")
 	multisigPda := solana.MustPublicKeyFromBase58("G26QSXWEdY11iue8Dw2aushtw7hhVF5zHDhSXqSJGRLA")
 	squads := NewSQuard(multisigPda, client)
-	multisig, err := squads.Multisig(t.Context())
+	multisig, err := squads.MultisigAccount(t.Context())
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -31,7 +30,7 @@ func Test_VaultTransactionCreate(t *testing.T) {
 
 	multisigPda := solana.MustPublicKeyFromBase58("G26QSXWEdY11iue8Dw2aushtw7hhVF5zHDhSXqSJGRLA")
 	s := NewSQuard(multisigPda, client)
-	multisig, err := s.Multisig(t.Context())
+	multisig, err := s.MultisigAccount(t.Context())
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -48,7 +47,7 @@ func Test_VaultTransactionCreate(t *testing.T) {
 	transactionIndex := multisig.TransactionIndex + 1
 	fmt.Println("transactionIndex=", transactionIndex)
 
-	tx, err := s.CreateVaultTransactionCreate(t.Context(), signer.PublicKey(), 0,
+	tx, err := s.CreateVaultTransactionCreateTx(t.Context(), signer.PublicKey(), 0,
 		transactionIndex,
 		[]solana.Instruction{vaultInstruction})
 	if err != nil {
@@ -96,12 +95,12 @@ func Test_CreateProposal(t *testing.T) {
 
 	multisigPda := solana.MustPublicKeyFromBase58("G26QSXWEdY11iue8Dw2aushtw7hhVF5zHDhSXqSJGRLA")
 	s := NewSQuard(multisigPda, client)
-	multisig, err := s.Multisig(t.Context())
+	multisig, err := s.MultisigAccount(t.Context())
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	tx, err := s.CreateProposalCreate(t.Context(), signer.PublicKey(), multisig.TransactionIndex)
+	tx, err := s.CreateProposalCreateTx(t.Context(), signer.PublicKey(), multisig.TransactionIndex)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -138,7 +137,7 @@ func Test_GetProposal(t *testing.T) {
 
 }
 
-func Test_ProposalVote(t *testing.T) {
+func Test_ProposalApprove(t *testing.T) {
 	client := rpc.New("http://47.241.179.122:8001/")
 
 	signer, _ := solana.PrivateKeyFromSolanaKeygenFile("creator.json") // or secondmember.json
@@ -146,7 +145,7 @@ func Test_ProposalVote(t *testing.T) {
 
 	multisigPda := solana.MustPublicKeyFromBase58("G26QSXWEdY11iue8Dw2aushtw7hhVF5zHDhSXqSJGRLA")
 	s := NewSQuard(multisigPda, client)
-	multisig, err := s.Multisig(t.Context())
+	multisig, err := s.MultisigAccount(t.Context())
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -161,20 +160,9 @@ func Test_ProposalVote(t *testing.T) {
 	}
 	fmt.Println(utils.JsonPretty(proposal))
 
-	switch proposal.Status.(type) {
-	case *squads_multisig_program.ProposalStatusActive:
-		fmt.Println("proposal is active")
-	case *squads_multisig_program.ProposalStatusDraft:
-		fmt.Println("proposal is draft")
-	case *squads_multisig_program.ProposalStatusExecuted:
-		fmt.Println("proposal is executed")
-	case *squads_multisig_program.ProposalStatusRejected:
-		fmt.Println("proposal is rejected")
-	default:
-		t.Fatal("unknown proposal status")
-	}
+	fmt.Println(GetProposalStatus(proposal))
 
-	tx, err := s.CreateProposalVote(t.Context(), signer.PublicKey(), multisig.TransactionIndex)
+	tx, err := s.CreateProposalApproveTx(t.Context(), signer.PublicKey(), multisig.TransactionIndex)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -204,14 +192,14 @@ func Test_VaultTransactionExecute(t *testing.T) {
 
 	multisigPda := solana.MustPublicKeyFromBase58("G26QSXWEdY11iue8Dw2aushtw7hhVF5zHDhSXqSJGRLA")
 	s := NewSQuard(multisigPda, client)
-	multisig, err := s.Multisig(t.Context())
+	multisig, err := s.MultisigAccount(t.Context())
 	if err != nil {
 		t.Fatal(err)
 	}
 
 	fmt.Println("multisig.TransactionIndex=", multisig.TransactionIndex)
 
-	tx, err := s.CreateVaultTransactionExecute(t.Context(), signer.PublicKey(), multisig.TransactionIndex)
+	tx, err := s.CreateVaultTransactionExecuteTx(t.Context(), signer.PublicKey(), multisig.TransactionIndex)
 	if err != nil {
 		t.Fatal(err)
 	}

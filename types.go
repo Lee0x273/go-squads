@@ -11,3 +11,23 @@ const (
 func (p Permission) Has(permission Permission) bool {
 	return p&permission != 0
 }
+
+type VoteOP uint8
+
+const (
+	VoteOPApprove VoteOP = iota
+	VoteOPReject
+	VoteOPCancel
+)
+
+type ProposalStatus uint8
+
+const (
+	ProposalStatusDraft ProposalStatus = iota
+	ProposalStatusActive
+	ProposalStatusRejected
+	ProposalStatusApproved
+	ProposalStatusExecuting
+	ProposalStatusExecuted
+	ProposalStatusCancelled
+)
