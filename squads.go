@@ -2,7 +2,6 @@ package squads
 
 import (
 	"context"
-	"encoding/hex"
 	"fmt"
 	"squads/generated/squads_multisig_program"
 
@@ -75,6 +74,7 @@ func (s *SQuard) CreateVaultTransactionCreate(ctx context.Context, creatorAndPay
 	if err != nil {
 		return nil, err
 	}
+	fmt.Println("vaultPda:", vaultPda)
 	if transactionIndex == 0 {
 		multisigInfo, err := s.Multisig(ctx)
 		if err != nil {
@@ -87,6 +87,7 @@ func (s *SQuard) CreateVaultTransactionCreate(ctx context.Context, creatorAndPay
 	if err != nil {
 		return nil, err
 	}
+	fmt.Println("transactionPda:", transactionPda)
 	recent, err := s.client.GetLatestBlockhash(ctx, rpc.CommitmentFinalized)
 	if err != nil {
 		return nil, err
@@ -96,7 +97,7 @@ func (s *SQuard) CreateVaultTransactionCreate(ctx context.Context, creatorAndPay
 		Instructions:    instructions,
 		RecentBlockhash: recent.Value.Blockhash,
 	}, []addresslookuptable.KeyedAddressLookupTable{})
-	fmt.Println(hex.EncodeToString(txMessageBytes))
+	fmt.Println("txMessageBytes len:", len(txMessageBytes), txMessageBytes)
 
 	args := squads_multisig_program.VaultTransactionCreateArgs{
 		VaultIndex:         vaultIndex,

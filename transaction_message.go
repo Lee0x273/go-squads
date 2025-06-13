@@ -2,11 +2,8 @@ package squads
 
 import (
 	"bytes"
-	"log"
 	"squads/generated/squads_multisig_program"
 
-	"github.com/axengine/utils"
-	ag_binary "github.com/gagliardetto/binary"
 	"github.com/gagliardetto/solana-go"
 	addresslookuptable "github.com/gagliardetto/solana-go/programs/address-lookup-table"
 )
@@ -26,38 +23,35 @@ func TransactionMessageToMultisigTransactionMessageBytes(message TransactionMess
 		message.RecentBlockhash,
 		message.Instructions,
 		addressLookupTableAccounts)
-
 	txMsg := squads_multisig_program.TransactionMessage{
 		NumSigners:            uint8(compiledMessage.Header.NumRequiredSignatures),
 		NumWritableSigners:    uint8(compiledMessage.Header.NumRequiredSignatures - compiledMessage.Header.NumReadonlySignedAccounts),
-		NumWritableNonSigners: uint8(len(compiledMessage.StaticAccountKeys)) - compiledMessage.Header.NumRequiredSignatures - compiledMessage.Header.NumReadonlyUnsignedAccounts,
-		AccountKeys:           compiledMessage.StaticAccountKeys,
-		// Instructions:          compiledMessage.Instructions,
-		// AddressTableLookups:   compiledMessage.AddressTableLookups,
+		NumWritableNonSigners: uint8(len(compiledMessage.AccountKeys)) - compiledMessage.Header.NumRequiredSignatures - compiledMessage.Header.NumReadonlyUnsignedAccounts,
+		AccountKeys: squads_multisig_program.SmallVec[uint8, solana.PublicKey]{
+			Data: compiledMessage.AccountKeys,
+		},
+		Instructions:        squads_multisig_program.SmallVec[uint8, squads_multisig_program.CompiledInstruction]{},
+		AddressTableLookups: squads_multisig_program.SmallVec[uint8, squads_multisig_program.MessageAddressTableLookup]{},
 	}
-	for _, v := range compiledMessage.CompiledInstructions {
-		txMsg.Instructions = append(txMsg.Instructions, squads_multisig_program.CompiledInstruction{
+	for _, v := range compiledMessage.Instructions {
+		txMsg.Instructions.Data = append(txMsg.Instructions.Data, squads_multisig_program.CompiledInstruction{
 			ProgramIdIndex: uint8(v.ProgramIDIndex),
-			AccountIndexes: convertToUint8Slice(v.Accounts),
-			Data:           v.Data,
+			AccountIndexes: squads_multisig_program.SmallVec[uint8, uint8]{Data: convertToUint8Slice(v.Accounts)},
+			Data:           squads_multisig_program.SmallVec[uint16, uint8]{Data: v.Data},
 		})
 	}
 	for _, v := range compiledMessage.AddressTableLookups {
-		txMsg.AddressTableLookups = append(txMsg.AddressTableLookups, squads_multisig_program.MessageAddressTableLookup{
+		txMsg.AddressTableLookups.Data = append(txMsg.AddressTableLookups.Data, squads_multisig_program.MessageAddressTableLookup{
 			AccountKey:      v.AccountKey,
-			WritableIndexes: v.WritableIndexes,
-			ReadonlyIndexes: v.ReadonlyIndexes,
+			WritableIndexes: squads_multisig_program.SmallVec[uint8, uint8]{Data: v.WritableIndexes},
+			ReadonlyIndexes: squads_multisig_program.SmallVec[uint8, uint8]{Data: v.ReadonlyIndexes},
 		})
 	}
 
-	utils.JsonPrettyToStdout(txMsg)
-
-	// Serialize the message to bytes using borsh encoder
+	// encode custom
 	buf := new(bytes.Buffer)
-	err := ag_binary.NewBorshEncoder(buf).Encode(&txMsg)
-	if err != nil {
-		log.Fatalf("Failed to encode transaction message: %v", err)
+	if err := squads_multisig_program.NewEncoder(buf).Encode(&txMsg); err != nil {
+		return nil, err
 	}
-
 	return buf.Bytes(), nil
 }

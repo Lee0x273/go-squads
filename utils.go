@@ -1,6 +1,8 @@
 package squads
 
-import "encoding/binary"
+import (
+	"encoding/binary"
+)
 
 func toU32Bytes(num uint32) []byte {
 	buf := make([]byte, 4)

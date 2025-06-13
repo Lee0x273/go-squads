@@ -1295,14 +1295,14 @@ type TransactionMessage struct {
 	NumWritableNonSigners uint8
 
 	// The list of unique account public keys (including program IDs) that will be used in the provided instructions.
-	AccountKeys []ag_solanago.PublicKey
+	AccountKeys SmallVec[uint8, ag_solanago.PublicKey]
 
 	// The list of instructions to execute.
-	Instructions []CompiledInstruction
+	Instructions SmallVec[uint8, CompiledInstruction]
 
 	// List of address table lookups used to load additional accounts
 	// for this transaction.
-	AddressTableLookups []MessageAddressTableLookup
+	AddressTableLookups SmallVec[uint8, MessageAddressTableLookup]
 }
 
 func (obj TransactionMessage) MarshalWithEncoder(encoder *ag_binary.Encoder) (err error) {
@@ -1377,10 +1377,10 @@ type CompiledInstruction struct {
 	ProgramIdIndex uint8
 
 	// Indices into the tx's `account_keys` list indicating which accounts to pass to the instruction.
-	AccountIndexes []uint8
+	AccountIndexes SmallVec[uint8, uint8]
 
 	// Instruction data.
-	Data []uint8
+	Data SmallVec[uint16, uint8]
 }
 
 func (obj CompiledInstruction) MarshalWithEncoder(encoder *ag_binary.Encoder) (err error) {
@@ -1426,10 +1426,10 @@ type MessageAddressTableLookup struct {
 	AccountKey ag_solanago.PublicKey
 
 	// List of indexes used to load writable account addresses
-	WritableIndexes []uint8
+	WritableIndexes SmallVec[uint8, uint8]
 
 	// List of indexes used to load readonly account addresses
-	ReadonlyIndexes []uint8
+	ReadonlyIndexes SmallVec[uint8, uint8]
 }
 
 func (obj MessageAddressTableLookup) MarshalWithEncoder(encoder *ag_binary.Encoder) (err error) {

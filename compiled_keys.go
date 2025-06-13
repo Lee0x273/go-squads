@@ -223,7 +223,7 @@ func (mk *MessageAccountKeys) CompileInstructions(instructions []solana.Instruct
 func CompileToWrappedMessageV0(payerKey solana.PublicKey,
 	recentBlockhash solana.Hash,
 	instructions []solana.Instruction,
-	addressLookupTableAccounts []addresslookuptable.KeyedAddressLookupTable) *MessageV0 {
+	addressLookupTableAccounts []addresslookuptable.KeyedAddressLookupTable) *solana.Message {
 
 	compiledKeys := CompileKeys(instructions, payerKey)
 
@@ -249,12 +249,21 @@ func CompileToWrappedMessageV0(payerKey solana.PublicKey,
 	}
 
 	compiledInstructions := accountKeys.CompileInstructions(instructions)
-
-	return &MessageV0{
-		Header:               header,
-		StaticAccountKeys:    staticAccountKeys,
-		RecentBlockhash:      recentBlockhash,
-		CompiledInstructions: compiledInstructions,
-		AddressTableLookups:  addressTableLookups,
+	messageV0 := solana.Message{
+		Header:              header,
+		AccountKeys:         staticAccountKeys,
+		RecentBlockhash:     recentBlockhash,
+		Instructions:        compiledInstructions,
+		AddressTableLookups: solana.MessageAddressTableLookupSlice(addressTableLookups),
 	}
+	messageV0.SetVersion(solana.MessageVersionV0)
+	return &messageV0
+
+	// return &MessageV0{
+	// 	Header:               header,
+	// 	StaticAccountKeys:    staticAccountKeys,
+	// 	RecentBlockhash:      recentBlockhash,
+	// 	CompiledInstructions: compiledInstructions,
+	// 	AddressTableLookups:  addressTableLookups,
+	// }
 }
