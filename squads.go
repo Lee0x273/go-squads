@@ -16,7 +16,7 @@ type SQuard struct {
 	client      *rpc.Client
 }
 
-func NewSQuard(multisigPda solana.PublicKey, client *rpc.Client) *SQuard {
+func NewSQuard(client *rpc.Client, multisigPda solana.PublicKey) *SQuard {
 	return &SQuard{
 		multisigPda: multisigPda,
 		client:      client,
@@ -66,26 +66,6 @@ func (s *SQuard) ProposalAccount(ctx context.Context, proposalPda solana.PublicK
 		return nil, err
 	}
 	return account, nil
-}
-
-func GetProposalStatus(proposal *squads_multisig_program.Proposal) ProposalStatus {
-	switch proposal.Status.(type) {
-	case *squads_multisig_program.ProposalStatusDraft:
-		return ProposalStatusDraft
-	case *squads_multisig_program.ProposalStatusActive:
-		return ProposalStatusActive
-	case *squads_multisig_program.ProposalStatusRejected:
-		return ProposalStatusRejected
-	case *squads_multisig_program.ProposalStatusApproved:
-		return ProposalStatusApproved
-	case *squads_multisig_program.ProposalStatusExecuting:
-		return ProposalStatusExecuting
-	case *squads_multisig_program.ProposalStatusExecuted:
-		return ProposalStatusExecuted
-	case *squads_multisig_program.ProposalStatusCancelled:
-		return ProposalStatusCancelled
-	}
-	return ProposalStatusDraft
 }
 
 func (s *SQuard) CreateVaultTransactionCreateTx(ctx context.Context, creatorAndPayer solana.PublicKey, vaultIndex uint8, transactionIndex uint64, instructions []solana.Instruction) (*solana.Transaction, error) {

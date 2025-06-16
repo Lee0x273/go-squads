@@ -3555,5 +3555,11 @@
       "name": "MultisigCreateDeprecated",
       "msg": "multisig_create has been deprecated. Use multisig_create_v2 instead."
     }
-  ]
+  ],
+  "metadata": {
+    "address": "SQDS4ep65T869zMMBKyuUq6aD6EgTu8psMjkvj52pCf",
+    "origin": "anchor",
+    "binaryVersion": "0.29.0",
+    "libVersion": "=0.29.0"
+  }
 }

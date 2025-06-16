@@ -12,9 +12,9 @@ import (
 )
 
 func Test_Multisig(t *testing.T) {
-	client := rpc.New("http://47.241.179.122:8001/")
+	client := rpc.New(rpc.DevNet.RPC)
 	multisigPda := solana.MustPublicKeyFromBase58("G26QSXWEdY11iue8Dw2aushtw7hhVF5zHDhSXqSJGRLA")
-	squads := NewSQuard(multisigPda, client)
+	squads := NewSQuard(client, multisigPda)
 	multisig, err := squads.MultisigAccount(t.Context())
 	if err != nil {
 		t.Fatal(err)
@@ -23,13 +23,13 @@ func Test_Multisig(t *testing.T) {
 }
 
 func Test_VaultTransactionCreate(t *testing.T) {
-	client := rpc.New("http://47.241.179.122:8001/")
+	client := rpc.New(rpc.DevNet.RPC)
 
 	signer, _ := solana.PrivateKeyFromSolanaKeygenFile("creator.json")
 	fmt.Println("signer:", signer.PublicKey())
 
 	multisigPda := solana.MustPublicKeyFromBase58("G26QSXWEdY11iue8Dw2aushtw7hhVF5zHDhSXqSJGRLA")
-	s := NewSQuard(multisigPda, client)
+	s := NewSQuard(client, multisigPda)
 	multisig, err := s.MultisigAccount(t.Context())
 	if err != nil {
 		t.Fatal(err)
@@ -73,10 +73,10 @@ func Test_VaultTransactionCreate(t *testing.T) {
 }
 
 func Test_GetVaultTransaction(t *testing.T) {
-	client := rpc.New("http://47.241.179.122:8001/")
+	client := rpc.New(rpc.DevNet.RPC)
 
 	multisigPda := solana.MustPublicKeyFromBase58("G26QSXWEdY11iue8Dw2aushtw7hhVF5zHDhSXqSJGRLA")
-	s := NewSQuard(multisigPda, client)
+	s := NewSQuard(client, multisigPda)
 	transactionIndex := uint64(22)
 	pda, _ := s.GetTransactionPda(uint64(transactionIndex))
 	act, err := s.VaultTransactionAccount(t.Context(), pda)
@@ -88,13 +88,13 @@ func Test_GetVaultTransaction(t *testing.T) {
 }
 
 func Test_CreateProposal(t *testing.T) {
-	client := rpc.New("http://47.241.179.122:8001/")
+	client := rpc.New(rpc.DevNet.RPC)
 
 	signer, _ := solana.PrivateKeyFromSolanaKeygenFile("creator.json")
 	fmt.Println("signer:", signer.PublicKey())
 
 	multisigPda := solana.MustPublicKeyFromBase58("G26QSXWEdY11iue8Dw2aushtw7hhVF5zHDhSXqSJGRLA")
-	s := NewSQuard(multisigPda, client)
+	s := NewSQuard(client, multisigPda)
 	multisig, err := s.MultisigAccount(t.Context())
 	if err != nil {
 		t.Fatal(err)
@@ -123,10 +123,10 @@ func Test_CreateProposal(t *testing.T) {
 }
 
 func Test_GetProposal(t *testing.T) {
-	client := rpc.New("http://47.241.179.122:8001/")
+	client := rpc.New(rpc.DevNet.RPC)
 
 	multisigPda := solana.MustPublicKeyFromBase58("G26QSXWEdY11iue8Dw2aushtw7hhVF5zHDhSXqSJGRLA")
-	s := NewSQuard(multisigPda, client)
+	s := NewSQuard(client, multisigPda)
 	transactionIndex := uint64(22)
 	pda, _ := s.GetProposalPda(uint64(transactionIndex))
 	act, err := s.ProposalAccount(t.Context(), pda)
@@ -138,13 +138,13 @@ func Test_GetProposal(t *testing.T) {
 }
 
 func Test_ProposalApprove(t *testing.T) {
-	client := rpc.New("http://47.241.179.122:8001/")
+	client := rpc.New(rpc.DevNet.RPC)
 
 	signer, _ := solana.PrivateKeyFromSolanaKeygenFile("creator.json") // or secondmember.json
 	fmt.Println("signer:", signer.PublicKey())
 
 	multisigPda := solana.MustPublicKeyFromBase58("G26QSXWEdY11iue8Dw2aushtw7hhVF5zHDhSXqSJGRLA")
-	s := NewSQuard(multisigPda, client)
+	s := NewSQuard(client, multisigPda)
 	multisig, err := s.MultisigAccount(t.Context())
 	if err != nil {
 		t.Fatal(err)
@@ -160,7 +160,7 @@ func Test_ProposalApprove(t *testing.T) {
 	}
 	fmt.Println(utils.JsonPretty(proposal))
 
-	fmt.Println(GetProposalStatus(proposal))
+	fmt.Println(GetProposalStatus(proposal.Status))
 
 	tx, err := s.CreateProposalApproveTx(t.Context(), signer.PublicKey(), multisig.TransactionIndex)
 	if err != nil {
@@ -185,13 +185,13 @@ func Test_ProposalApprove(t *testing.T) {
 }
 
 func Test_VaultTransactionExecute(t *testing.T) {
-	client := rpc.New("http://47.241.179.122:8001/")
+	client := rpc.New(rpc.DevNet.RPC)
 
 	signer, _ := solana.PrivateKeyFromSolanaKeygenFile("creator.json")
 	fmt.Println("signer:", signer.PublicKey())
 
 	multisigPda := solana.MustPublicKeyFromBase58("G26QSXWEdY11iue8Dw2aushtw7hhVF5zHDhSXqSJGRLA")
-	s := NewSQuard(multisigPda, client)
+	s := NewSQuard(client, multisigPda)
 	multisig, err := s.MultisigAccount(t.Context())
 	if err != nil {
 		t.Fatal(err)
