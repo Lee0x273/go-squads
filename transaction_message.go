@@ -2,7 +2,7 @@ package squads
 
 import (
 	"bytes"
-	"squads/generated/squads_multisig_program"
+	"github.com/Lee0x273/go-squads/generated/squads_multisig_program"
 
 	"github.com/gagliardetto/solana-go"
 	addresslookuptable "github.com/gagliardetto/solana-go/programs/address-lookup-table"

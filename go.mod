@@ -1,4 +1,4 @@
-module squads
+module github.com/Lee0x273/go-squads
 
 go 1.24.0
 

@@ -1,6 +1,6 @@
 package squads
 
-import "squads/generated/squads_multisig_program"
+import "github.com/Lee0x273/go-squads/generated/squads_multisig_program"
 
 type Permission uint8
 

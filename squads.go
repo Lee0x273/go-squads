@@ -3,7 +3,7 @@ package squads
 import (
 	"context"
 	"fmt"
-	"squads/generated/squads_multisig_program"
+	"github.com/Lee0x273/go-squads/generated/squads_multisig_program"
 
 	ag_binary "github.com/gagliardetto/binary"
 	"github.com/gagliardetto/solana-go"
