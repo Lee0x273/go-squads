@@ -258,12 +258,4 @@ func CompileToWrappedMessageV0(payerKey solana.PublicKey,
 	}
 	messageV0.SetVersion(solana.MessageVersionV0)
 	return &messageV0
-
-	// return &MessageV0{
-	// 	Header:               header,
-	// 	StaticAccountKeys:    staticAccountKeys,
-	// 	RecentBlockhash:      recentBlockhash,
-	// 	CompiledInstructions: compiledInstructions,
-	// 	AddressTableLookups:  addressTableLookups,
-	// }
 }
