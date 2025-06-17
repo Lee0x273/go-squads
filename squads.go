@@ -12,19 +12,19 @@ import (
 	"github.com/gagliardetto/solana-go/rpc"
 )
 
-type SQuard struct {
+type Squads struct {
 	multisigPda solana.PublicKey
 	client      *rpc.Client
 }
 
-func NewSQuard(client *rpc.Client, multisigPda solana.PublicKey) *SQuard {
-	return &SQuard{
+func NewSquads(client *rpc.Client, multisigPda solana.PublicKey) *Squads {
+	return &Squads{
 		multisigPda: multisigPda,
 		client:      client,
 	}
 }
 
-func (s *SQuard) MultisigAccount(ctx context.Context) (*squads_multisig_program.Multisig, error) {
+func (s *Squads) MultisigAccount(ctx context.Context) (*squads_multisig_program.Multisig, error) {
 	out, err := s.client.GetAccountInfo(ctx, s.multisigPda)
 	if err != nil {
 		return nil, err
@@ -39,7 +39,7 @@ func (s *SQuard) MultisigAccount(ctx context.Context) (*squads_multisig_program.
 	return account, nil
 }
 
-func (s *SQuard) VaultTransactionAccount(ctx context.Context, transactionPda solana.PublicKey) (*squads_multisig_program.VaultTransaction, error) {
+func (s *Squads) VaultTransactionAccount(ctx context.Context, transactionPda solana.PublicKey) (*squads_multisig_program.VaultTransaction, error) {
 	out, err := s.client.GetAccountInfo(ctx, transactionPda)
 	if err != nil {
 		return nil, err
@@ -54,7 +54,7 @@ func (s *SQuard) VaultTransactionAccount(ctx context.Context, transactionPda sol
 	return account, nil
 }
 
-func (s *SQuard) ProposalAccount(ctx context.Context, proposalPda solana.PublicKey) (*squads_multisig_program.Proposal, error) {
+func (s *Squads) ProposalAccount(ctx context.Context, proposalPda solana.PublicKey) (*squads_multisig_program.Proposal, error) {
 	out, err := s.client.GetAccountInfo(ctx, proposalPda)
 	if err != nil {
 		return nil, err
@@ -69,7 +69,7 @@ func (s *SQuard) ProposalAccount(ctx context.Context, proposalPda solana.PublicK
 	return account, nil
 }
 
-func (s *SQuard) CreateVaultTransactionCreateTx(ctx context.Context, creatorAndPayer solana.PublicKey, vaultIndex uint8, transactionIndex uint64, instructions []solana.Instruction) (*solana.Transaction, error) {
+func (s *Squads) CreateVaultTransactionCreateTx(ctx context.Context, creatorAndPayer solana.PublicKey, vaultIndex uint8, transactionIndex uint64, instructions []solana.Instruction) (*solana.Transaction, error) {
 	vaultPda, err := s.GetVaultPda(vaultIndex)
 	if err != nil {
 		return nil, err
@@ -119,7 +119,7 @@ func (s *SQuard) CreateVaultTransactionCreateTx(ctx context.Context, creatorAndP
 	return tx, nil
 }
 
-func (s *SQuard) CreateProposalCreateTx(ctx context.Context, creatorAndPayer solana.PublicKey, transactionIndex uint64) (*solana.Transaction, error) {
+func (s *Squads) CreateProposalCreateTx(ctx context.Context, creatorAndPayer solana.PublicKey, transactionIndex uint64) (*solana.Transaction, error) {
 	recent, err := s.client.GetLatestBlockhash(ctx, rpc.CommitmentFinalized)
 	if err != nil {
 		return nil, err
@@ -148,7 +148,7 @@ func (s *SQuard) CreateProposalCreateTx(ctx context.Context, creatorAndPayer sol
 	return tx, nil
 }
 
-func (s *SQuard) CreateVaultTransactionAndProposalTx(ctx context.Context, creatorAndPayer solana.PublicKey, vaultIndex uint8, transactionIndex uint64, instructions []solana.Instruction, autoApprove bool) (*solana.Transaction, error) {
+func (s *Squads) CreateVaultTransactionAndProposalTx(ctx context.Context, creatorAndPayer solana.PublicKey, vaultIndex uint8, transactionIndex uint64, instructions []solana.Instruction, autoApprove bool) (*solana.Transaction, error) {
 	vaultPda, err := s.GetVaultPda(vaultIndex)
 	if err != nil {
 		return nil, err
@@ -223,7 +223,7 @@ func (s *SQuard) CreateVaultTransactionAndProposalTx(ctx context.Context, creato
 	return tx, nil
 }
 
-func (s *SQuard) CreateProposalApproveTx(ctx context.Context, voter solana.PublicKey, transactionIndex uint64) (*solana.Transaction, error) {
+func (s *Squads) CreateProposalApproveTx(ctx context.Context, voter solana.PublicKey, transactionIndex uint64) (*solana.Transaction, error) {
 	recent, err := s.client.GetLatestBlockhash(ctx, rpc.CommitmentFinalized)
 	if err != nil {
 		return nil, err
@@ -247,7 +247,7 @@ func (s *SQuard) CreateProposalApproveTx(ctx context.Context, voter solana.Publi
 	return tx, nil
 }
 
-func (s *SQuard) CreateProposalVoteTx(ctx context.Context, voter solana.PublicKey, transactionIndex uint64, op VoteOP) (*solana.Transaction, error) {
+func (s *Squads) CreateProposalVoteTx(ctx context.Context, voter solana.PublicKey, transactionIndex uint64, op VoteOP) (*solana.Transaction, error) {
 	recent, err := s.client.GetLatestBlockhash(ctx, rpc.CommitmentFinalized)
 	if err != nil {
 		return nil, err
@@ -300,7 +300,7 @@ func (s *SQuard) CreateProposalVoteTx(ctx context.Context, voter solana.PublicKe
 	return tx, nil
 }
 
-func (s *SQuard) CreateVaultTransactionExecuteTx(ctx context.Context, executor solana.PublicKey, transactionIndex uint64) (*solana.Transaction, error) {
+func (s *Squads) CreateVaultTransactionExecuteTx(ctx context.Context, executor solana.PublicKey, transactionIndex uint64) (*solana.Transaction, error) {
 	transactionPda, err := s.GetTransactionPda(transactionIndex)
 	if err != nil {
 		return nil, err

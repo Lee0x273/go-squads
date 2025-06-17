@@ -2,7 +2,15 @@
 - support `SmallVec`
 
 ## usage
-
+- new squads
+```
+	import(
+		"github.com/Lee0x273/go-squads"
+	)
+	client := rpc.New(rpc.DevNet.RPC)
+	multisigPda := solana.MustPublicKeyFromBase58("...")
+	s := squads.NewSquards(client, multisigPda)
+```
 - create vault transaction
 ```
 	tx, err := s.CreateVaultTransactionCreateTx(t.Context(), signer.PublicKey(), vaultIndex,

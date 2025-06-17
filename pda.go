@@ -18,7 +18,7 @@ var (
 	SEED_SPENDING_LIMIT    = []byte("spending_limit")
 )
 
-func (s *SQuard) GetProgramConfigPda() (solana.PublicKey, error) {
+func (s *Squads) GetProgramConfigPda() (solana.PublicKey, error) {
 	pk, _, err := solana.FindProgramAddress(
 		[][]byte{
 			SEED_PREFIX,
@@ -32,7 +32,7 @@ func (s *SQuard) GetProgramConfigPda() (solana.PublicKey, error) {
 	return pk, nil
 }
 
-func (s *SQuard) GetMultisigPda(createKey solana.PublicKey) (solana.PublicKey, error) {
+func (s *Squads) GetMultisigPda(createKey solana.PublicKey) (solana.PublicKey, error) {
 	pk, _, err := solana.FindProgramAddress(
 		[][]byte{
 			SEED_PREFIX,
@@ -47,7 +47,7 @@ func (s *SQuard) GetMultisigPda(createKey solana.PublicKey) (solana.PublicKey, e
 	return pk, nil
 }
 
-func (s *SQuard) GetVaultPda(index uint8) (solana.PublicKey, error) {
+func (s *Squads) GetVaultPda(index uint8) (solana.PublicKey, error) {
 	pk, _, err := solana.FindProgramAddress(
 		[][]byte{
 			SEED_PREFIX,
@@ -63,7 +63,7 @@ func (s *SQuard) GetVaultPda(index uint8) (solana.PublicKey, error) {
 	return pk, nil
 }
 
-func (s *SQuard) GetEphemeralSignerPda(transactionPda solana.PublicKey, ephemeralSignerIndex uint8) (solana.PublicKey, error) {
+func (s *Squads) GetEphemeralSignerPda(transactionPda solana.PublicKey, ephemeralSignerIndex uint8) (solana.PublicKey, error) {
 	pk, _, err := solana.FindProgramAddress(
 		[][]byte{
 			SEED_PREFIX,
@@ -79,7 +79,7 @@ func (s *SQuard) GetEphemeralSignerPda(transactionPda solana.PublicKey, ephemera
 	return pk, nil
 }
 
-func (s *SQuard) GetTransactionPda(index uint64) (solana.PublicKey, error) {
+func (s *Squads) GetTransactionPda(index uint64) (solana.PublicKey, error) {
 	pk, _, err := solana.FindProgramAddress(
 		[][]byte{
 			SEED_PREFIX,
@@ -95,7 +95,7 @@ func (s *SQuard) GetTransactionPda(index uint64) (solana.PublicKey, error) {
 	return pk, nil
 }
 
-func (s *SQuard) GetProposalPda(transactionIndex uint64) (solana.PublicKey, error) {
+func (s *Squads) GetProposalPda(transactionIndex uint64) (solana.PublicKey, error) {
 	pk, _, err := solana.FindProgramAddress(
 		[][]byte{
 			SEED_PREFIX,
@@ -112,7 +112,7 @@ func (s *SQuard) GetProposalPda(transactionIndex uint64) (solana.PublicKey, erro
 	return pk, nil
 }
 
-func (s *SQuard) GetBatchTransactionPda(batchIndex uint64, transactionIndex uint32) (solana.PublicKey, error) {
+func (s *Squads) GetBatchTransactionPda(batchIndex uint64, transactionIndex uint32) (solana.PublicKey, error) {
 	pk, _, err := solana.FindProgramAddress(
 		[][]byte{
 			SEED_PREFIX,
@@ -130,7 +130,7 @@ func (s *SQuard) GetBatchTransactionPda(batchIndex uint64, transactionIndex uint
 	return pk, nil
 }
 
-func (s *SQuard) GetSpendingLimitPda(createKey solana.PublicKey) (solana.PublicKey, error) {
+func (s *Squads) GetSpendingLimitPda(createKey solana.PublicKey) (solana.PublicKey, error) {
 	pk, _, err := solana.FindProgramAddress(
 		[][]byte{
 			SEED_PREFIX,
