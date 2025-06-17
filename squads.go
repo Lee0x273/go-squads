@@ -3,6 +3,7 @@ package squads
 import (
 	"context"
 	"fmt"
+
 	"github.com/Lee0x273/go-squads/generated/squads_multisig_program"
 
 	ag_binary "github.com/gagliardetto/binary"
@@ -189,13 +190,14 @@ func (s *SQuard) CreateVaultTransactionAndProposalTx(ctx context.Context, creato
 		solana.SystemProgramID,
 	).Build()
 
+	proposalPda, _ := s.GetProposalPda(transactionIndex)
 	pcIx := squads_multisig_program.NewProposalCreateInstruction(
 		squads_multisig_program.ProposalCreateArgs{
 			TransactionIndex: transactionIndex,
 			Draft:            false,
 		},
 		s.multisigPda,
-		transactionPda,
+		proposalPda,
 		creatorAndPayer,
 		creatorAndPayer,
 		solana.SystemProgramID,
