@@ -9,7 +9,7 @@
 	)
 	client := rpc.New(rpc.DevNet.RPC)
 	multisigPda := solana.MustPublicKeyFromBase58("...")
-	s := squads.NewSquards(client, multisigPda)
+	s := squads.New(client, multisigPda)
 ```
 - create vault transaction
 ```
