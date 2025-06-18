@@ -30,4 +30,4 @@
 	tx, err := s.CreateVaultTransactionExecuteTx(t.Context(), signer.PublicKey(), multisig.TransactionIndex)
 ```
 
-see more: squads_test.go
+see more: multisig_test.go
