@@ -14,7 +14,7 @@ import (
 func Test_Multisig(t *testing.T) {
 	client := rpc.New(rpc.DevNet.RPC)
 	multisigPda := solana.MustPublicKeyFromBase58("G26QSXWEdY11iue8Dw2aushtw7hhVF5zHDhSXqSJGRLA")
-	squads := NewSquads(client, multisigPda)
+	squads := New(client, multisigPda)
 	multisig, err := squads.MultisigAccount(t.Context())
 	if err != nil {
 		t.Fatal(err)
@@ -29,12 +29,12 @@ func Test_VaultTransactionCreate(t *testing.T) {
 	fmt.Println("signer:", signer.PublicKey())
 
 	multisigPda := solana.MustPublicKeyFromBase58("G26QSXWEdY11iue8Dw2aushtw7hhVF5zHDhSXqSJGRLA")
-	s := NewSquads(client, multisigPda)
+	s := New(client, multisigPda)
 	multisig, err := s.MultisigAccount(t.Context())
 	if err != nil {
 		t.Fatal(err)
 	}
-	vaultPda, err := s.GetVaultPda(0)
+	vaultPda, err := GetVaultPda(s.multisigPda, 0)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -76,9 +76,9 @@ func Test_GetVaultTransaction(t *testing.T) {
 	client := rpc.New(rpc.DevNet.RPC)
 
 	multisigPda := solana.MustPublicKeyFromBase58("G26QSXWEdY11iue8Dw2aushtw7hhVF5zHDhSXqSJGRLA")
-	s := NewSquads(client, multisigPda)
+	s := New(client, multisigPda)
 	transactionIndex := uint64(22)
-	pda, _ := s.GetTransactionPda(uint64(transactionIndex))
+	pda, _ := GetTransactionPda(s.multisigPda, uint64(transactionIndex))
 	act, err := s.VaultTransactionAccount(t.Context(), pda)
 	if err != nil {
 		t.Fatal(err)
@@ -94,7 +94,7 @@ func Test_CreateProposal(t *testing.T) {
 	fmt.Println("signer:", signer.PublicKey())
 
 	multisigPda := solana.MustPublicKeyFromBase58("G26QSXWEdY11iue8Dw2aushtw7hhVF5zHDhSXqSJGRLA")
-	s := NewSquads(client, multisigPda)
+	s := New(client, multisigPda)
 	multisig, err := s.MultisigAccount(t.Context())
 	if err != nil {
 		t.Fatal(err)
@@ -126,9 +126,9 @@ func Test_GetProposal(t *testing.T) {
 	client := rpc.New(rpc.DevNet.RPC)
 
 	multisigPda := solana.MustPublicKeyFromBase58("G26QSXWEdY11iue8Dw2aushtw7hhVF5zHDhSXqSJGRLA")
-	s := NewSquads(client, multisigPda)
+	s := New(client, multisigPda)
 	transactionIndex := uint64(22)
-	pda, _ := s.GetProposalPda(uint64(transactionIndex))
+	pda, _ := GetProposalPda(s.multisigPda, transactionIndex)
 	act, err := s.ProposalAccount(t.Context(), pda)
 	if err != nil {
 		t.Fatal(err)
@@ -144,13 +144,13 @@ func Test_ProposalApprove(t *testing.T) {
 	fmt.Println("signer:", signer.PublicKey())
 
 	multisigPda := solana.MustPublicKeyFromBase58("G26QSXWEdY11iue8Dw2aushtw7hhVF5zHDhSXqSJGRLA")
-	s := NewSquads(client, multisigPda)
+	s := New(client, multisigPda)
 	multisig, err := s.MultisigAccount(t.Context())
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	proposalPda, err := s.GetProposalPda(multisig.TransactionIndex)
+	proposalPda, err := GetProposalPda(s.multisigPda, multisig.TransactionIndex)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -191,7 +191,7 @@ func Test_VaultTransactionExecute(t *testing.T) {
 	fmt.Println("signer:", signer.PublicKey())
 
 	multisigPda := solana.MustPublicKeyFromBase58("G26QSXWEdY11iue8Dw2aushtw7hhVF5zHDhSXqSJGRLA")
-	s := NewSquads(client, multisigPda)
+	s := New(client, multisigPda)
 	multisig, err := s.MultisigAccount(t.Context())
 	if err != nil {
 		t.Fatal(err)
