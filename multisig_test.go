@@ -47,13 +47,22 @@ func Test_VaultTransactionCreate(t *testing.T) {
 	transactionIndex := multisig.TransactionIndex + 1
 	fmt.Println("transactionIndex=", transactionIndex)
 
-	tx, err := s.CreateVaultTransactionCreateTx(t.Context(), signer.PublicKey(), 0,
+	ix, err := s.VaultTransactionCreateIx(t.Context(), signer.PublicKey(), 0,
 		transactionIndex,
 		[]solana.Instruction{vaultInstruction})
 	if err != nil {
 		t.Fatal(err)
 	}
 
+	recent, err := s.client.GetLatestBlockhash(t.Context(), rpc.CommitmentFinalized)
+	if err != nil {
+		t.Fatal(err)
+	}
+	tx, _ := solana.NewTransaction(
+		[]solana.Instruction{ix},
+		recent.Value.Blockhash,
+		solana.TransactionPayer(signer.PublicKey()),
+	)
 	_, err = tx.Sign(func(key solana.PublicKey) *solana.PrivateKey {
 		if signer.PublicKey().Equals(key) {
 			return &signer
@@ -100,7 +109,7 @@ func Test_CreateProposal(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	tx, err := s.CreateProposalCreateTx(t.Context(), signer.PublicKey(), multisig.TransactionIndex)
+	tx, err := s.ProposalCreateTx(t.Context(), signer.PublicKey(), multisig.TransactionIndex)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -127,7 +136,7 @@ func Test_GetProposal(t *testing.T) {
 
 	multisigPda := solana.MustPublicKeyFromBase58("G26QSXWEdY11iue8Dw2aushtw7hhVF5zHDhSXqSJGRLA")
 	s := New(client, multisigPda)
-	transactionIndex := uint64(22)
+	transactionIndex := uint64(24)
 	pda, _ := GetProposalPda(s.multisigPda, transactionIndex)
 	act, err := s.ProposalAccount(t.Context(), pda)
 	if err != nil {
@@ -140,7 +149,7 @@ func Test_GetProposal(t *testing.T) {
 func Test_ProposalApprove(t *testing.T) {
 	client := rpc.New(rpc.DevNet.RPC)
 
-	signer, _ := solana.PrivateKeyFromSolanaKeygenFile("creator.json") // or secondmember.json
+	signer, _ := solana.PrivateKeyFromSolanaKeygenFile("creator.json") // or second_member.json
 	fmt.Println("signer:", signer.PublicKey())
 
 	multisigPda := solana.MustPublicKeyFromBase58("G26QSXWEdY11iue8Dw2aushtw7hhVF5zHDhSXqSJGRLA")
@@ -162,7 +171,7 @@ func Test_ProposalApprove(t *testing.T) {
 
 	fmt.Println(GetProposalStatus(proposal.Status))
 
-	tx, err := s.CreateProposalApproveTx(t.Context(), signer.PublicKey(), multisig.TransactionIndex)
+	tx, err := s.ProposalApproveTx(t.Context(), signer.PublicKey(), multisig.TransactionIndex)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -199,7 +208,7 @@ func Test_VaultTransactionExecute(t *testing.T) {
 
 	fmt.Println("multisig.TransactionIndex=", multisig.TransactionIndex)
 
-	tx, err := s.CreateVaultTransactionExecuteTx(t.Context(), signer.PublicKey(), multisig.TransactionIndex)
+	tx, err := s.VaultTransactionExecuteTx(t.Context(), signer.PublicKey(), multisig.TransactionIndex)
 	if err != nil {
 		t.Fatal(err)
 	}

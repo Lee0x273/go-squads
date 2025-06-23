@@ -2,7 +2,6 @@ package squads
 
 import (
 	"context"
-	"fmt"
 
 	"github.com/Lee0x273/go-squads/generated/squads_multisig_program"
 	ag_binary "github.com/gagliardetto/binary"
@@ -68,7 +67,7 @@ func (s *Multisig) ProposalAccount(ctx context.Context, proposalPda solana.Publi
 	return account, nil
 }
 
-func (s *Multisig) CreateVaultTransactionCreateTx(ctx context.Context, creatorAndPayer solana.PublicKey, vaultIndex uint8, transactionIndex uint64, instructions []solana.Instruction) (*solana.Transaction, error) {
+func (s *Multisig) VaultTransactionCreateIx(ctx context.Context, creatorAndPayer solana.PublicKey, vaultIndex uint8, transactionIndex uint64, instructions []solana.Instruction) (solana.Instruction, error) {
 	vaultPda, err := GetVaultPda(s.multisigPda, vaultIndex)
 	if err != nil {
 		return nil, err
@@ -85,14 +84,11 @@ func (s *Multisig) CreateVaultTransactionCreateTx(ctx context.Context, creatorAn
 	if err != nil {
 		return nil, err
 	}
-	recent, err := s.client.GetLatestBlockhash(ctx, rpc.CommitmentFinalized)
-	if err != nil {
-		return nil, err
-	}
+
 	txMessageBytes, err := TransactionMessageToMultisigTransactionMessageBytes(TransactionMessage{
 		PayerKey:        vaultPda,
 		Instructions:    instructions,
-		RecentBlockhash: recent.Value.Blockhash,
+		RecentBlockhash: solana.Hash{}, //unused ,canbe zero hash
 	}, []addresslookuptable.KeyedAddressLookupTable{})
 
 	args := squads_multisig_program.VaultTransactionCreateArgs{
@@ -110,26 +106,34 @@ func (s *Multisig) CreateVaultTransactionCreateTx(ctx context.Context, creatorAn
 		solana.SystemProgramID,
 	).Build()
 
-	tx, _ := solana.NewTransaction(
-		[]solana.Instruction{ix},
-		recent.Value.Blockhash,
-		solana.TransactionPayer(creatorAndPayer),
-	)
-	return tx, nil
+	return ix, nil
 }
 
-func (s *Multisig) CreateProposalCreateTx(ctx context.Context, creatorAndPayer solana.PublicKey, transactionIndex uint64) (*solana.Transaction, error) {
+func (s *Multisig) VaultTransactionCreateTx(ctx context.Context, creatorAndPayer solana.PublicKey, vaultIndex uint8, transactionIndex uint64, instructions []solana.Instruction) (*solana.Transaction, error) {
 	recent, err := s.client.GetLatestBlockhash(ctx, rpc.CommitmentFinalized)
 	if err != nil {
 		return nil, err
 	}
+	ix, err := s.VaultTransactionCreateIx(ctx, creatorAndPayer, vaultIndex, transactionIndex, instructions)
+	if err != nil {
+		return nil, err
+	}
+	return solana.NewTransaction(
+		[]solana.Instruction{ix},
+		recent.Value.Blockhash,
+		solana.TransactionPayer(creatorAndPayer),
+	)
+}
+
+func (s *Multisig) ProposalCreateIx(ctx context.Context, creatorAndPayer solana.PublicKey, transactionIndex uint64) (solana.Instruction, error) {
 	args := squads_multisig_program.ProposalCreateArgs{
 		TransactionIndex: transactionIndex,
 		Draft:            false,
 	}
-
-	proposalPda, _ := GetProposalPda(s.multisigPda, transactionIndex)
-
+	proposalPda, err := GetProposalPda(s.multisigPda, transactionIndex)
+	if err != nil {
+		return nil, err
+	}
 	ix := squads_multisig_program.NewProposalCreateInstruction(
 		args,
 		s.multisigPda,
@@ -138,16 +142,27 @@ func (s *Multisig) CreateProposalCreateTx(ctx context.Context, creatorAndPayer s
 		creatorAndPayer,
 		solana.SystemProgramID,
 	).Build()
+	return ix, nil
+}
 
-	tx, _ := solana.NewTransaction(
+func (s *Multisig) ProposalCreateTx(ctx context.Context, creatorAndPayer solana.PublicKey, transactionIndex uint64) (*solana.Transaction, error) {
+	recent, err := s.client.GetLatestBlockhash(ctx, rpc.CommitmentFinalized)
+	if err != nil {
+		return nil, err
+	}
+	ix, err := s.ProposalCreateIx(ctx, creatorAndPayer, transactionIndex)
+	if err != nil {
+		return nil, err
+	}
+
+	return solana.NewTransaction(
 		[]solana.Instruction{ix},
 		recent.Value.Blockhash,
 		solana.TransactionPayer(creatorAndPayer),
 	)
-	return tx, nil
 }
 
-func (s *Multisig) CreateVaultTransactionAndProposalTx(ctx context.Context, creatorAndPayer solana.PublicKey, vaultIndex uint8, transactionIndex uint64, instructions []solana.Instruction, autoApprove bool) (*solana.Transaction, error) {
+func (s *Multisig) VaultTransactionAndProposalTx(ctx context.Context, creatorAndPayer solana.PublicKey, vaultIndex uint8, transactionIndex uint64, instructions []solana.Instruction, autoApprove bool) (*solana.Transaction, error) {
 	vaultPda, err := GetVaultPda(s.multisigPda, vaultIndex)
 	if err != nil {
 		return nil, err
@@ -189,7 +204,10 @@ func (s *Multisig) CreateVaultTransactionAndProposalTx(ctx context.Context, crea
 		solana.SystemProgramID,
 	).Build()
 
-	proposalPda, _ := GetProposalPda(s.multisigPda, transactionIndex)
+	proposalPda, err := GetProposalPda(s.multisigPda, transactionIndex)
+	if err != nil {
+		return nil, err
+	}
 	pcIx := squads_multisig_program.NewProposalCreateInstruction(
 		squads_multisig_program.ProposalCreateArgs{
 			TransactionIndex: transactionIndex,
@@ -204,7 +222,10 @@ func (s *Multisig) CreateVaultTransactionAndProposalTx(ctx context.Context, crea
 
 	ixs := []solana.Instruction{vtcIx, pcIx}
 	if autoApprove { // creator must be a voter
-		proposalPda, _ := GetProposalPda(s.multisigPda, transactionIndex)
+		proposalPda, err := GetProposalPda(s.multisigPda, transactionIndex)
+		if err != nil {
+			return nil, err
+		}
 		paIx := squads_multisig_program.NewProposalApproveInstruction(
 			squads_multisig_program.ProposalVoteArgs{},
 			s.multisigPda,
@@ -214,22 +235,20 @@ func (s *Multisig) CreateVaultTransactionAndProposalTx(ctx context.Context, crea
 		ixs = append(ixs, paIx)
 	}
 
-	tx, _ := solana.NewTransaction(
+	return solana.NewTransaction(
 		ixs,
 		recent.Value.Blockhash,
 		solana.TransactionPayer(creatorAndPayer),
 	)
-	return tx, nil
 }
 
-func (s *Multisig) CreateProposalApproveTx(ctx context.Context, voter solana.PublicKey, transactionIndex uint64) (*solana.Transaction, error) {
-	recent, err := s.client.GetLatestBlockhash(ctx, rpc.CommitmentFinalized)
+func (s *Multisig) ProposalApproveIx(ctx context.Context, voter solana.PublicKey, transactionIndex uint64) (solana.Instruction, error) {
+	args := squads_multisig_program.ProposalVoteArgs{}
+
+	proposalPda, err := GetProposalPda(s.multisigPda, transactionIndex)
 	if err != nil {
 		return nil, err
 	}
-	args := squads_multisig_program.ProposalVoteArgs{}
-
-	proposalPda, _ := GetProposalPda(s.multisigPda, transactionIndex)
 
 	ix := squads_multisig_program.NewProposalApproveInstruction(
 		args,
@@ -238,73 +257,91 @@ func (s *Multisig) CreateProposalApproveTx(ctx context.Context, voter solana.Pub
 		proposalPda,
 	).Build()
 
-	tx, _ := solana.NewTransaction(
-		[]solana.Instruction{ix},
-		recent.Value.Blockhash,
-		solana.TransactionPayer(voter),
-	)
-	return tx, nil
+	return ix, nil
 }
 
-func (s *Multisig) CreateProposalVoteTx(ctx context.Context, voter solana.PublicKey, transactionIndex uint64, op VoteOP) (*solana.Transaction, error) {
+func (s *Multisig) ProposalApproveTx(ctx context.Context, voter solana.PublicKey, transactionIndex uint64) (*solana.Transaction, error) {
+	ix, err := s.ProposalApproveIx(ctx, voter, transactionIndex)
+	if err != nil {
+		return nil, err
+	}
 	recent, err := s.client.GetLatestBlockhash(ctx, rpc.CommitmentFinalized)
 	if err != nil {
 		return nil, err
 	}
-	args := squads_multisig_program.ProposalVoteArgs{}
-
-	proposalPda, _ := GetProposalPda(s.multisigPda, transactionIndex)
-
-	ixs := []solana.Instruction{}
-
-	switch op {
-	case VoteOPApprove:
-		ix := squads_multisig_program.NewProposalApproveInstruction(
-			args,
-			s.multisigPda,
-			voter,
-			proposalPda,
-		).Build()
-		ixs = append(ixs, ix)
-	case VoteOPReject:
-		ix := squads_multisig_program.NewProposalRejectInstruction(
-			args,
-			s.multisigPda,
-			voter,
-			proposalPda,
-		).Build()
-		ixs = append(ixs, ix)
-	case VoteOPCancel:
-		proposalAccount, err := s.ProposalAccount(ctx, proposalPda)
-		if err != nil {
-			return nil, err
-		}
-		if _, ok := proposalAccount.Status.(*squads_multisig_program.ProposalStatusApproved); !ok {
-			return nil, fmt.Errorf("proposal is not approved")
-		}
-		ix := squads_multisig_program.NewProposalCancelInstruction(
-			args,
-			s.multisigPda,
-			voter,
-			proposalPda,
-		).Build()
-		ixs = append(ixs, ix)
-	}
-
-	tx, _ := solana.NewTransaction(
-		ixs,
+	return solana.NewTransaction(
+		[]solana.Instruction{ix},
 		recent.Value.Blockhash,
 		solana.TransactionPayer(voter),
 	)
-	return tx, nil
 }
 
-func (s *Multisig) CreateVaultTransactionExecuteTx(ctx context.Context, executor solana.PublicKey, transactionIndex uint64) (*solana.Transaction, error) {
+func (s *Multisig) ProposalVoteIx(ctx context.Context, voter solana.PublicKey, transactionIndex uint64, op VoteOP) (solana.Instruction, error) {
+	args := squads_multisig_program.ProposalVoteArgs{}
+
+	proposalPda, err := GetProposalPda(s.multisigPda, transactionIndex)
+	if err != nil {
+		return nil, err
+	}
+	var ix solana.Instruction
+	switch op {
+	case VoteOPApprove:
+		ix = squads_multisig_program.NewProposalApproveInstruction(
+			args,
+			s.multisigPda,
+			voter,
+			proposalPda,
+		).Build()
+	case VoteOPReject:
+		ix = squads_multisig_program.NewProposalRejectInstruction(
+			args,
+			s.multisigPda,
+			voter,
+			proposalPda,
+		).Build()
+	case VoteOPCancel:
+		// proposalAccount, err := s.ProposalAccount(ctx, proposalPda)
+		// if err != nil {
+		// 	return nil, err
+		// }
+		// if _, ok := proposalAccount.Status.(*squads_multisig_program.ProposalStatusApproved); !ok {
+		// 	return nil, fmt.Errorf("proposal is not approved")
+		// }
+		ix = squads_multisig_program.NewProposalCancelInstruction(
+			args,
+			s.multisigPda,
+			voter,
+			proposalPda,
+		).Build()
+	}
+	return ix, nil
+}
+
+func (s *Multisig) ProposalVoteTx(ctx context.Context, voter solana.PublicKey, transactionIndex uint64, op VoteOP) (*solana.Transaction, error) {
+	ix, err := s.ProposalVoteIx(ctx, voter, transactionIndex, op)
+	if err != nil {
+		return nil, err
+	}
+	recent, err := s.client.GetLatestBlockhash(ctx, rpc.CommitmentFinalized)
+	if err != nil {
+		return nil, err
+	}
+	return solana.NewTransaction(
+		[]solana.Instruction{ix},
+		recent.Value.Blockhash,
+		solana.TransactionPayer(voter),
+	)
+}
+
+func (s *Multisig) VaultTransactionExecuteIx(ctx context.Context, executor solana.PublicKey, transactionIndex uint64) (solana.Instruction, error) {
 	transactionPda, err := GetTransactionPda(s.multisigPda, transactionIndex)
 	if err != nil {
 		return nil, err
 	}
-	proposalPda, _ := GetProposalPda(s.multisigPda, transactionIndex)
+	proposalPda, err := GetProposalPda(s.multisigPda, transactionIndex)
+	if err != nil {
+		return nil, err
+	}
 
 	vaultTransaction, err := s.VaultTransactionAccount(ctx, transactionPda)
 	if err != nil {
@@ -332,16 +369,22 @@ func (s *Multisig) CreateVaultTransactionExecuteTx(ctx context.Context, executor
 		ixb.AccountMetaSlice = append(ixb.AccountMetaSlice,
 			solana.NewAccountMeta(accountKey, isWritable, false))
 	}
-	ix := ixb.Build()
 
+	return ixb.Build(), nil
+}
+
+func (s *Multisig) VaultTransactionExecuteTx(ctx context.Context, executor solana.PublicKey, transactionIndex uint64) (*solana.Transaction, error) {
+	ix, err := s.VaultTransactionExecuteIx(ctx, executor, transactionIndex)
+	if err != nil {
+		return nil, err
+	}
 	recent, err := s.client.GetLatestBlockhash(ctx, rpc.CommitmentFinalized)
 	if err != nil {
 		return nil, err
 	}
-	tx, _ := solana.NewTransaction(
+	return solana.NewTransaction(
 		[]solana.Instruction{ix},
 		recent.Value.Blockhash,
 		solana.TransactionPayer(executor),
 	)
-	return tx, nil
 }

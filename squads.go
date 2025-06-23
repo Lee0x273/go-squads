@@ -19,13 +19,19 @@ func CreateMultisigIx(ctx context.Context, client *rpc.Client, createKey, creato
 		TimeLock:        timelock,
 		RentCollector:   nil,
 	}
-	programConfigPda, _ := GetProgramConfigPda()
+	programConfigPda, err := GetProgramConfigPda()
+	if err != nil {
+		return nil, solana.PublicKey{}, err
+	}
 	var programConfig squads_multisig_program.ProgramConfig
 	if err := client.GetAccountDataInto(ctx, programConfigPda, &programConfig); err != nil {
 		return nil, solana.PublicKey{}, err
 	}
 	var configTreasury = programConfig.Treasury
-	multisigPda, _ := GetMultisigPda(createKey)
+	multisigPda, err := GetMultisigPda(createKey)
+	if err != nil {
+		return nil, solana.PublicKey{}, err
+	}
 
 	ix := squads_multisig_program.NewMultisigCreateV2Instruction(
 		args,
@@ -37,4 +43,21 @@ func CreateMultisigIx(ctx context.Context, client *rpc.Client, createKey, creato
 		solana.SystemProgramID,
 	).Build()
 	return ix, multisigPda, nil
+}
+
+func CreateMultisigTx(ctx context.Context, client *rpc.Client, createKey, creator solana.PublicKey, members []squads_multisig_program.Member, threshold uint16, timelock uint32) (*solana.Transaction, solana.PublicKey, error) {
+	ix, multisigPda, err := CreateMultisigIx(ctx, client, createKey, creator, members, threshold, timelock)
+	if err != nil {
+		return nil, multisigPda, err
+	}
+	recent, err := client.GetLatestBlockhash(ctx, rpc.CommitmentFinalized)
+	if err != nil {
+		return nil, multisigPda, err
+	}
+	tx, err := solana.NewTransaction(
+		[]solana.Instruction{ix},
+		recent.Value.Blockhash,
+		solana.TransactionPayer(creator),
+	)
+	return tx, multisigPda, nil
 }
