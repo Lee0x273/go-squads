@@ -8,12 +8,23 @@ import (
 	"github.com/gagliardetto/solana-go/rpc"
 )
 
-// CreateMultisigIx return a "create multisig wallet" instruction
-// createKey:One-time, used to generate multisigPda
-// creator: signer and feePayer
-func CreateMultisigIx(ctx context.Context, client *rpc.Client, createKey, creator solana.PublicKey, members []squads_multisig_program.Member, threshold uint16, timelock uint32) (solana.Instruction, solana.PublicKey, error) {
+// CreateMultisigIx returns a "create multisig wallet" instruction
+// Parameters:
+// - ctx: Context for the operation
+// - client: RPC client for Solana
+// - createKey: One-time key used to generate multisigPda
+// - creator: Signer and fee payer
+// - configAuthority: Optional configuration authority
+// - members: List of members for the multisig
+// - threshold: Number of signatures required for approval
+// - timelock: Time lock period
+// Returns:
+// - Instruction for creating a multisig wallet
+// - Public key of the created multisig
+// - Error, if any
+func CreateMultisigIx(ctx context.Context, client *rpc.Client, createKey, creator solana.PublicKey, configAuthority *solana.PublicKey, members []squads_multisig_program.Member, threshold uint16, timelock uint32) (solana.Instruction, solana.PublicKey, error) {
 	args := squads_multisig_program.MultisigCreateArgsV2{
-		ConfigAuthority: nil,
+		ConfigAuthority: configAuthority,
 		Threshold:       threshold,
 		Members:         members,
 		TimeLock:        timelock,
@@ -45,8 +56,22 @@ func CreateMultisigIx(ctx context.Context, client *rpc.Client, createKey, creato
 	return ix, multisigPda, nil
 }
 
-func CreateMultisigTx(ctx context.Context, client *rpc.Client, createKey, creator solana.PublicKey, members []squads_multisig_program.Member, threshold uint16, timelock uint32) (*solana.Transaction, solana.PublicKey, error) {
-	ix, multisigPda, err := CreateMultisigIx(ctx, client, createKey, creator, members, threshold, timelock)
+// CreateMultisigTx creates a transaction for creating a multisig wallet
+// Parameters:
+// - ctx: Context for the operation
+// - client: RPC client for Solana
+// - createKey: One-time key used to generate multisigPda
+// - creator: Signer and fee payer
+// - configAuthority: Optional configuration authority
+// - members: List of members for the multisig
+// - threshold: Number of signatures required for approval
+// - timelock: Time lock period
+// Returns:
+// - Transaction for creating a multisig wallet
+// - Public key of the created multisig
+// - Error, if any
+func CreateMultisigTx(ctx context.Context, client *rpc.Client, createKey, creator solana.PublicKey, configAuthority *solana.PublicKey, members []squads_multisig_program.Member, threshold uint16, timelock uint32) (*solana.Transaction, solana.PublicKey, error) {
+	ix, multisigPda, err := CreateMultisigIx(ctx, client, createKey, creator, configAuthority, members, threshold, timelock)
 	if err != nil {
 		return nil, multisigPda, err
 	}
