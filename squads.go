@@ -22,13 +22,13 @@ import (
 // - Instruction for creating a multisig wallet
 // - Public key of the created multisig
 // - Error, if any
-func CreateMultisigIx(ctx context.Context, client *rpc.Client, createKey, creator solana.PublicKey, configAuthority *solana.PublicKey, members []squads_multisig_program.Member, threshold uint16, timelock uint32) (solana.Instruction, solana.PublicKey, error) {
+func CreateMultisigIx(ctx context.Context, client *rpc.Client, createKey, creator solana.PublicKey, configAuthority *solana.PublicKey, members []squads_multisig_program.Member, threshold uint16, timelock uint32, rentCollector *solana.PublicKey) (solana.Instruction, solana.PublicKey, error) {
 	args := squads_multisig_program.MultisigCreateArgsV2{
 		ConfigAuthority: configAuthority,
 		Threshold:       threshold,
 		Members:         members,
 		TimeLock:        timelock,
-		RentCollector:   nil,
+		RentCollector:   rentCollector,
 	}
 	programConfigPda, err := GetProgramConfigPda()
 	if err != nil {
@@ -66,12 +66,13 @@ func CreateMultisigIx(ctx context.Context, client *rpc.Client, createKey, creato
 // - members: List of members for the multisig
 // - threshold: Number of signatures required for approval
 // - timelock: Time lock period
+// - rentCollector: Optional rent collector
 // Returns:
 // - Transaction for creating a multisig wallet
 // - Public key of the created multisig
 // - Error, if any
-func CreateMultisigTx(ctx context.Context, client *rpc.Client, createKey, creator solana.PublicKey, configAuthority *solana.PublicKey, members []squads_multisig_program.Member, threshold uint16, timelock uint32) (*solana.Transaction, solana.PublicKey, error) {
-	ix, multisigPda, err := CreateMultisigIx(ctx, client, createKey, creator, configAuthority, members, threshold, timelock)
+func CreateMultisigTx(ctx context.Context, client *rpc.Client, createKey, creator solana.PublicKey, configAuthority *solana.PublicKey, members []squads_multisig_program.Member, threshold uint16, timelock uint32, rentCollector *solana.PublicKey) (*solana.Transaction, solana.PublicKey, error) {
+	ix, multisigPda, err := CreateMultisigIx(ctx, client, createKey, creator, configAuthority, members, threshold, timelock, rentCollector)
 	if err != nil {
 		return nil, multisigPda, err
 	}
@@ -84,5 +85,5 @@ func CreateMultisigTx(ctx context.Context, client *rpc.Client, createKey, creato
 		recent.Value.Blockhash,
 		solana.TransactionPayer(creator),
 	)
-	return tx, multisigPda, nil
+	return tx, multisigPda, err
 }
