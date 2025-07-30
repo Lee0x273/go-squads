@@ -191,6 +191,16 @@ if err != nil {
 
 For a complete list of available functions and types, please refer to the [Go Reference](https://pkg.go.dev/github.com/Lee0x273/go-squads).
 
+## Future Work
+
+This SDK currently supports the core functionalities of the Squads V4 protocol. However, the following features are not yet implemented in the high-level API:
+
+*   **Program Configuration:** Instructions for managing the global program configuration (`ProgramConfigInit`, `ProgramConfigSetAuthority`, etc.).
+*   **Transaction Buffer:** Instructions for handling large transactions by uploading them in chunks (`TransactionBufferCreate`, `TransactionBufferExtend`, etc.).
+*   **Batch Transactions:** A set of instructions for creating, managing, and executing batches of transactions (`BatchCreate`, `BatchAddTransaction`, `BatchExecuteTransaction`, etc.).
+
+Contributions to implement these features are welcome.
+
 ## Contributing
 
 Contributions are welcome! Please feel free to open an issue or submit a pull request.

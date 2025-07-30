@@ -500,6 +500,9 @@ func (s *Multisig) VaultTransactionAndProposalTx(ctx context.Context, creatorAnd
 		Instructions:    instructions,
 		RecentBlockhash: recent.Value.Blockhash,
 	}, []addresslookuptable.KeyedAddressLookupTable{})
+	if err != nil {
+		return nil, err
+	}
 
 	args := squads_multisig_program.VaultTransactionCreateArgs{
 		VaultIndex:         vaultIndex,
@@ -590,51 +593,64 @@ func (s *Multisig) ProposalApproveTx(ctx context.Context, voter solana.PublicKey
 	)
 }
 
-// ProposalVoteIx creates an instruction for voting on a proposal
-func (s *Multisig) ProposalVoteIx(ctx context.Context, voter solana.PublicKey, transactionIndex uint64, op VoteOP) (solana.Instruction, error) {
+// ProposalRejectIx creates an instruction to reject a proposal.
+func (s *Multisig) ProposalRejectIx(ctx context.Context, voter solana.PublicKey, transactionIndex uint64) (solana.Instruction, error) {
 	args := squads_multisig_program.ProposalVoteArgs{}
 
 	proposalPda, err := GetProposalPda(s.multisigPda, transactionIndex)
 	if err != nil {
 		return nil, err
 	}
-	var ix solana.Instruction
-	switch op {
-	case VoteOPApprove:
-		ix = squads_multisig_program.NewProposalApproveInstruction(
-			args,
-			s.multisigPda,
-			voter,
-			proposalPda,
-		).Build()
-	case VoteOPReject:
-		ix = squads_multisig_program.NewProposalRejectInstruction(
-			args,
-			s.multisigPda,
-			voter,
-			proposalPda,
-		).Build()
-	case VoteOPCancel:
-		// proposalAccount, err := s.ProposalAccount(ctx, proposalPda)
-		// if err != nil {
-		// 	return nil, err
-		// }
-		// if _, ok := proposalAccount.Status.(*squads_multisig_program.ProposalStatusApproved); !ok {
-		// 	return nil, fmt.Errorf("proposal is not approved")
-		// }
-		ix = squads_multisig_program.NewProposalCancelInstruction(
-			args,
-			s.multisigPda,
-			voter,
-			proposalPda,
-		).Build()
-	}
+
+	ix := squads_multisig_program.NewProposalRejectInstruction(
+		args,
+		s.multisigPda,
+		voter,
+		proposalPda,
+	).Build()
+
 	return ix, nil
 }
 
-// ProposalVoteTx creates a transaction for voting on a proposal
-func (s *Multisig) ProposalVoteTx(ctx context.Context, voter solana.PublicKey, transactionIndex uint64, op VoteOP) (*solana.Transaction, error) {
-	ix, err := s.ProposalVoteIx(ctx, voter, transactionIndex, op)
+// ProposalRejectTx creates a transaction to reject a proposal.
+func (s *Multisig) ProposalRejectTx(ctx context.Context, voter solana.PublicKey, transactionIndex uint64) (*solana.Transaction, error) {
+	ix, err := s.ProposalRejectIx(ctx, voter, transactionIndex)
+	if err != nil {
+		return nil, err
+	}
+	recent, err := s.client.GetLatestBlockhash(ctx, rpc.CommitmentFinalized)
+	if err != nil {
+		return nil, err
+	}
+	return solana.NewTransaction(
+		[]solana.Instruction{ix},
+		recent.Value.Blockhash,
+		solana.TransactionPayer(voter),
+	)
+}
+
+// ProposalCancelIx creates an instruction to cancel a proposal.
+func (s *Multisig) ProposalCancelIx(ctx context.Context, voter solana.PublicKey, transactionIndex uint64) (solana.Instruction, error) {
+	args := squads_multisig_program.ProposalVoteArgs{}
+
+	proposalPda, err := GetProposalPda(s.multisigPda, transactionIndex)
+	if err != nil {
+		return nil, err
+	}
+
+	ix := squads_multisig_program.NewProposalCancelInstruction(
+		args,
+		s.multisigPda,
+		voter,
+		proposalPda,
+	).Build()
+
+	return ix, nil
+}
+
+// ProposalCancelTx creates a transaction to cancel a proposal.
+func (s *Multisig) ProposalCancelTx(ctx context.Context, voter solana.PublicKey, transactionIndex uint64) (*solana.Transaction, error) {
+	ix, err := s.ProposalCancelIx(ctx, voter, transactionIndex)
 	if err != nil {
 		return nil, err
 	}
@@ -814,5 +830,106 @@ func (s *Multisig) ConfigTransactionExecuteTx(ctx context.Context, member, feePa
 		[]solana.Instruction{ix},
 		recent.Value.Blockhash,
 		solana.TransactionPayer(feePayer),
+	)
+}
+
+// ProposalActivateIx creates an instruction to activate a proposal.
+func (s *Multisig) ProposalActivateIx(ctx context.Context, member solana.PublicKey, transactionIndex uint64) (solana.Instruction, error) {
+	proposalPda, err := GetProposalPda(s.multisigPda, transactionIndex)
+	if err != nil {
+		return nil, err
+	}
+	ix := squads_multisig_program.NewProposalActivateInstruction(
+		s.multisigPda,
+		member,
+		proposalPda,
+	).Build()
+	return ix, nil
+}
+
+// ProposalActivateTx creates a transaction to activate a proposal.
+func (s *Multisig) ProposalActivateTx(ctx context.Context, member solana.PublicKey, transactionIndex uint64) (*solana.Transaction, error) {
+	ix, err := s.ProposalActivateIx(ctx, member, transactionIndex)
+	if err != nil {
+		return nil, err
+	}
+	recent, err := s.client.GetLatestBlockhash(ctx, rpc.CommitmentFinalized)
+	if err != nil {
+		return nil, err
+	}
+	return solana.NewTransaction(
+		[]solana.Instruction{ix},
+		recent.Value.Blockhash,
+		solana.TransactionPayer(member),
+	)
+}
+
+// ProposalCancelV2Ix creates an instruction to cancel a proposal using the V2 instruction.
+func (s *Multisig) ProposalCancelV2Ix(ctx context.Context, member solana.PublicKey, transactionIndex uint64) (solana.Instruction, error) {
+	proposalPda, err := GetProposalPda(s.multisigPda, transactionIndex)
+	if err != nil {
+		return nil, err
+	}
+	ix := squads_multisig_program.NewProposalCancelV2Instruction(
+		squads_multisig_program.ProposalVoteArgs{},
+		s.multisigPda,
+		member,
+		proposalPda,
+		solana.SystemProgramID,
+	).Build()
+	return ix, nil
+}
+
+// ProposalCancelV2Tx creates a transaction to cancel a proposal using the V2 instruction.
+func (s *Multisig) ProposalCancelV2Tx(ctx context.Context, member solana.PublicKey, transactionIndex uint64) (*solana.Transaction, error) {
+	ix, err := s.ProposalCancelV2Ix(ctx, member, transactionIndex)
+	if err != nil {
+		return nil, err
+	}
+	recent, err := s.client.GetLatestBlockhash(ctx, rpc.CommitmentFinalized)
+	if err != nil {
+		return nil, err
+	}
+	return solana.NewTransaction(
+		[]solana.Instruction{ix},
+		recent.Value.Blockhash,
+		solana.TransactionPayer(member),
+	)
+}
+
+// ConfigTransactionAccountsCloseIx creates an instruction to close a config transaction and its proposal.
+func (s *Multisig) ConfigTransactionAccountsCloseIx(ctx context.Context, rentCollector solana.PublicKey, transactionIndex uint64) (solana.Instruction, error) {
+	proposalPda, err := GetProposalPda(s.multisigPda, transactionIndex)
+	if err != nil {
+		return nil, err
+	}
+	transactionPda, err := GetTransactionPda(s.multisigPda, transactionIndex)
+	if err != nil {
+		return nil, err
+	}
+	ix := squads_multisig_program.NewConfigTransactionAccountsCloseInstruction(
+		s.multisigPda,
+		proposalPda,
+		transactionPda,
+		rentCollector,
+		solana.SystemProgramID,
+	).Build()
+	return ix, nil
+}
+
+// ConfigTransactionAccountsCloseTx creates a transaction to close a config transaction and its proposal.
+func (s *Multisig) ConfigTransactionAccountsCloseTx(ctx context.Context, rentCollector solana.PublicKey, transactionIndex uint64) (*solana.Transaction, error) {
+	ix, err := s.ConfigTransactionAccountsCloseIx(ctx, rentCollector, transactionIndex)
+	if err != nil {
+		return nil, err
+	}
+	recent, err := s.client.GetLatestBlockhash(ctx, rpc.CommitmentFinalized)
+	if err != nil {
+		return nil, err
+	}
+	return solana.NewTransaction(
+		[]solana.Instruction{ix},
+		recent.Value.Blockhash,
+		solana.TransactionPayer(rentCollector),
 	)
 }
