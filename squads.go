@@ -48,7 +48,7 @@ func CreateMultisigIx(ctx context.Context, client *rpc.Client, createKey, creato
 		args,
 		programConfigPda,
 		configTreasury,
-		multisigPda, // creator
+		multisigPda,
 		createKey,
 		creator,
 		solana.SystemProgramID,
